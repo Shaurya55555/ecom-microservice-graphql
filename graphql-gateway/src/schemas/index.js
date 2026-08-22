@@ -22,6 +22,18 @@ const typeDefs = gql`
     status: String!
   }
 
+  type RegisterResult {
+    message: String!
+    userId: ID!
+  }
+
+  type AuthPayload {
+    token: String!
+    userId: ID!
+    username: String!
+    email: String!
+  }
+
   type Query {
     getUsers: [User]
     getUser(id: ID!): User
@@ -35,6 +47,8 @@ const typeDefs = gql`
     createUser(name: String!, email: String!): User
     createProduct(name: String!, description: String!, price: Float!): Product
     createOrder(productId: ID!, userId: ID!, quantity: Int!): Order
+    register(username: String!, email: String!, password: String!): RegisterResult
+    login(email: String!, password: String!): AuthPayload
   }
 `;
 

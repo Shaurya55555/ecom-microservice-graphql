@@ -36,8 +36,20 @@ const resolvers = {
       const response = await axios.post(`${process.env.PRODUCT_SERVICE_URL}/products`, { name, description, price });
       return response.data;
     },
-    createOrder: async (_, { productId, userId, quantity }) => {
-      const response = await axios.post(`${process.env.ORDER_SERVICE_URL}/orders`, { productId, userId, quantity });
+    createOrder: async (_, { productId, userId, quantity }, context) => {
+      const response = await axios.post(
+        `${process.env.ORDER_SERVICE_URL}/orders`,
+        { productId, userId, quantity },
+        { headers: context.authorization ? { Authorization: context.authorization } : {} }
+      );
+      return response.data;
+    },
+    register: async (_, { username, email, password }) => {
+      const response = await axios.post(`${process.env.USER_SERVICE_URL}/users/register`, { username, email, password });
+      return response.data;
+    },
+    login: async (_, { email, password }) => {
+      const response = await axios.post(`${process.env.USER_SERVICE_URL}/users/login`, { email, password });
       return response.data;
     },
   },

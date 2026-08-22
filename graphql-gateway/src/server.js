@@ -8,7 +8,7 @@ const server = new ApolloServer({
   typeDefs,
   resolvers,
   context: ({ req }) => {
-    // You can add user authentication logic here if needed
+    return { authorization: req.headers.authorization || null };
   },
 });
 
