@@ -27,6 +27,24 @@ export default function CartPage() {
 
   const total = items.reduce((sum, i) => sum + i.price * i.quantity, 0);
 
+  if (ready && session && session.role !== "user") {
+    return (
+      <div>
+        <h1 className="text-lg font-semibold text-white">Your cart</h1>
+        <p className="mt-2 text-sm text-neutral-400">
+          Placing orders is only available for buyer accounts. You&apos;re signed in as a{" "}
+          <span className="text-white">{session.role}</span> —{" "}
+          <Link
+            href={session.role === "seller" ? "/sell" : "/admin"}
+            className="text-indigo-300 hover:underline"
+          >
+            go to your dashboard →
+          </Link>
+        </p>
+      </div>
+    );
+  }
+
   async function handleCheckout() {
     if (!session) return;
     setCheckingOut(true);
@@ -114,7 +132,7 @@ export default function CartPage() {
           <Link href="/login" className="text-indigo-300 hover:underline">
             Log in
           </Link>{" "}
-          to check out — the order service requires a valid JWT.
+          to place your order — the order service requires a valid JWT.
         </p>
       ) : (
         <button
@@ -122,7 +140,7 @@ export default function CartPage() {
           disabled={checkingOut}
           className="mt-6 w-full rounded-md bg-indigo-500 py-2.5 text-sm font-medium text-white hover:bg-indigo-400 disabled:opacity-60"
         >
-          {checkingOut ? "Placing order…" : "Checkout"}
+          {checkingOut ? "Placing order…" : "Place Order"}
         </button>
       )}
       {checkoutError && <p className="mt-3 text-xs text-red-400">{checkoutError}</p>}

@@ -38,6 +38,21 @@ export default function AccountPage() {
     );
   }
 
+  if (session.role !== "user") {
+    return (
+      <p className="text-sm text-neutral-400">
+        This is the buyer account page. You&apos;re signed in as a{" "}
+        <span className="text-white">{session.role}</span> —{" "}
+        <Link
+          href={session.role === "seller" ? "/sell" : "/admin"}
+          className="text-indigo-300 hover:underline"
+        >
+          go to your dashboard →
+        </Link>
+      </p>
+    );
+  }
+
   const myOrders = (data?.getOrders ?? []).filter((o) => o.userId === session.userId);
 
   return (

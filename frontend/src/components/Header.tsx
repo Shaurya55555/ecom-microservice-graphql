@@ -6,6 +6,12 @@ import { useAppSelector } from "@/lib/redux/hooks";
 import { clearSession } from "@/lib/auth";
 import { useRouter } from "next/navigation";
 
+const LANDING_PAGE: Record<string, string> = {
+  user: "/account",
+  seller: "/sell",
+  admin: "/admin",
+};
+
 export function Header() {
   const { session, ready } = useSession();
   const itemCount = useAppSelector((s) =>
@@ -18,6 +24,8 @@ export function Header() {
     router.push("/");
   }
 
+  const isBuyer = !session || session.role === "user";
+
   return (
     <header className="sticky top-0 z-10 border-b border-white/10 bg-neutral-950/80 backdrop-blur">
       <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-4">
@@ -28,13 +36,26 @@ export function Header() {
           <Link href="/" className="hover:text-white">
             Catalog
           </Link>
-          <Link href="/cart" className="hover:text-white">
-            Cart{itemCount > 0 ? ` (${itemCount})` : ""}
-          </Link>
+          {isBuyer && (
+            <Link href="/cart" className="hover:text-white">
+              Cart{itemCount > 0 ? ` (${itemCount})` : ""}
+            </Link>
+          )}
+          {session?.role === "seller" && (
+            <Link href="/sell" className="hover:text-white">
+              Sell
+            </Link>
+          )}
+          {session?.role === "admin" && (
+            <Link href="/admin" className="hover:text-white">
+              Admin
+            </Link>
+          )}
           {ready && session ? (
             <>
-              <Link href="/account" className="hover:text-white">
-                {session.username}
+              <Link href={LANDING_PAGE[session.role] ?? "/account"} className="hover:text-white">
+                {session.username}{" "}
+                <span className="text-xs text-neutral-500">({session.role})</span>
               </Link>
               <button
                 onClick={handleLogout}

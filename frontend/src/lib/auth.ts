@@ -1,8 +1,11 @@
+export type Role = "user" | "seller" | "admin";
+
 export type Session = {
   token: string;
   userId: string;
   username: string;
   email: string;
+  role: Role;
 };
 
 const KEY = "ecom_session";

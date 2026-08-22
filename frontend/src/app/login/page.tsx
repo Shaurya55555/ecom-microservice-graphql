@@ -5,7 +5,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMutation } from "@apollo/client/react";
 import { LOGIN } from "@/lib/graphql/mutations";
-import { saveSession } from "@/lib/auth";
+import { saveSession, type Role } from "@/lib/auth";
+import { PasswordInput } from "@/components/PasswordInput";
 
 type LoginResult = {
   login: {
@@ -13,7 +14,14 @@ type LoginResult = {
     userId: string;
     username: string;
     email: string;
+    role: Role;
   };
+};
+
+const LANDING_PAGE: Record<Role, string> = {
+  user: "/account",
+  seller: "/sell",
+  admin: "/admin",
 };
 
 export default function LoginPage() {
@@ -27,7 +35,7 @@ export default function LoginPage() {
     const { data } = await login({ variables: { email, password } });
     if (data?.login) {
       saveSession(data.login);
-      router.push("/account");
+      router.push(LANDING_PAGE[data.login.role] ?? "/account");
     }
   }
 
@@ -51,13 +59,15 @@ export default function LoginPage() {
           />
         </div>
         <div>
-          <label className="mb-1.5 block text-xs text-neutral-400">Password</label>
-          <input
-            type="password"
+          <label htmlFor="password" className="mb-1.5 block text-xs text-neutral-400">
+            Password
+          </label>
+          <PasswordInput
+            id="password"
             required
+            autoComplete="current-password"
             value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className="w-full rounded-md border border-white/10 bg-neutral-900 px-3 py-2 text-sm text-white focus:border-indigo-400/50 focus:outline-none"
+            onChange={setPassword}
           />
         </div>
 

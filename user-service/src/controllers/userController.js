@@ -3,13 +3,19 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 
 // Register a new user
+const VALID_ROLES = ['user', 'seller', 'admin'];
+
 const registerUser = async (req, res) => {
     try {
-        const { username, email, password } = req.body;
+        const { username, email, password, role } = req.body;
 
         // Check if the required fields are provided
         if (!username || !email || !password) {
             return res.status(400).json({ message: 'Username, email, and password are required' });
+        }
+
+        if (role && !VALID_ROLES.includes(role)) {
+            return res.status(400).json({ message: `role must be one of: ${VALID_ROLES.join(', ')}` });
         }
 
         // Check if the email already exists
@@ -20,9 +26,9 @@ const registerUser = async (req, res) => {
 
         // Hash the password
         const hashedPassword = await bcrypt.hash(password, 10);
-        
+
         // Create a new user
-        const newUser = new User({ username, email, password: hashedPassword });
+        const newUser = new User({ username, email, password: hashedPassword, role: role || 'user' });
         await newUser.save();
 
         res.status(201).json({ message: 'User registered successfully', userId: newUser._id });
@@ -54,7 +60,7 @@ const loginUser = async (req, res) => {
         }
 
         const token = jwt.sign(
-            { userId: user._id, username: user.username },
+            { userId: user._id, username: user.username, role: user.role },
             process.env.JWT_SECRET,
             { expiresIn: '1h' }
         );
@@ -65,6 +71,7 @@ const loginUser = async (req, res) => {
             userId: user._id,
             username: user.username,
             email: user.email,
+            role: user.role,
         });
     } catch (error) {
         console.error('Error logging in:', error);

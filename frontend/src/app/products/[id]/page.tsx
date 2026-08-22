@@ -6,6 +6,7 @@ import { useQuery } from "@apollo/client/react";
 import { GET_PRODUCT } from "@/lib/graphql/queries";
 import { useAppDispatch } from "@/lib/redux/hooks";
 import { addItem } from "@/lib/redux/cartSlice";
+import { useSession } from "@/lib/useSession";
 
 type Product = {
   id: string;
@@ -24,6 +25,8 @@ export default function ProductDetailPage({
     variables: { id },
   });
   const dispatch = useAppDispatch();
+  const { session, ready } = useSession();
+  const isBuyer = !session || session.role === "user";
 
   const product = data?.getProduct;
 
@@ -46,16 +49,22 @@ export default function ProductDetailPage({
           <p className="mt-5 text-2xl font-semibold text-indigo-300">
             ${product.price.toFixed(2)}
           </p>
-          <button
-            onClick={() =>
-              dispatch(
-                addItem({ productId: product.id, name: product.name, price: product.price })
-              )
-            }
-            className="mt-6 w-full rounded-md bg-indigo-500 py-2.5 text-sm font-medium text-white hover:bg-indigo-400"
-          >
-            Add to cart
-          </button>
+          {!ready ? null : isBuyer ? (
+            <button
+              onClick={() =>
+                dispatch(
+                  addItem({ productId: product.id, name: product.name, price: product.price })
+                )
+              }
+              className="mt-6 w-full rounded-md bg-indigo-500 py-2.5 text-sm font-medium text-white hover:bg-indigo-400"
+            >
+              Add to cart
+            </button>
+          ) : (
+            <p className="mt-6 text-xs text-neutral-500">
+              Placing orders is only available for buyer accounts.
+            </p>
+          )}
         </div>
       )}
     </div>

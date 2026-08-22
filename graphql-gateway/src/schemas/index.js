@@ -32,6 +32,7 @@ const typeDefs = gql`
     userId: ID!
     username: String!
     email: String!
+    role: String!
   }
 
   type Query {
@@ -47,7 +48,7 @@ const typeDefs = gql`
     createUser(name: String!, email: String!): User
     createProduct(name: String!, description: String!, price: Float!): Product
     createOrder(productId: ID!, userId: ID!, quantity: Int!): Order
-    register(username: String!, email: String!, password: String!): RegisterResult
+    register(username: String!, email: String!, password: String!, role: String): RegisterResult
     login(email: String!, password: String!): AuthPayload
   }
 `;

@@ -44,8 +44,8 @@ const resolvers = {
       );
       return response.data;
     },
-    register: async (_, { username, email, password }) => {
-      const response = await axios.post(`${process.env.USER_SERVICE_URL}/users/register`, { username, email, password });
+    register: async (_, { username, email, password, role }) => {
+      const response = await axios.post(`${process.env.USER_SERVICE_URL}/users/register`, { username, email, password, role });
       return response.data;
     },
     login: async (_, { email, password }) => {
