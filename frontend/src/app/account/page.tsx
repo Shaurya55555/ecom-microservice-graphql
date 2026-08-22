@@ -2,8 +2,13 @@
 
 import Link from "next/link";
 import { useQuery } from "@apollo/client/react";
+import { ClipboardList, ChevronRight, AlertTriangle } from "lucide-react";
 import { GET_ORDERS } from "@/lib/graphql/queries";
 import { useSession } from "@/lib/useSession";
+import { Card, SectionHeading } from "@/components/ui/Card";
+import { CardRowSkeleton } from "@/components/ui/Skeleton";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { Badge, STATUS_VARIANT } from "@/components/ui/Badge";
 
 type Order = {
   id: string;
@@ -11,12 +16,6 @@ type Order = {
   userId: string;
   quantity: number;
   status: string;
-};
-
-const statusColor: Record<string, string> = {
-  Pending: "text-amber-400",
-  Accepted: "text-emerald-400",
-  Rejected: "text-red-400",
 };
 
 export default function AccountPage() {
@@ -30,7 +29,7 @@ export default function AccountPage() {
   if (!session) {
     return (
       <p className="text-sm text-neutral-400">
-        <Link href="/login" className="text-indigo-300 hover:underline">
+        <Link href="/login" className="font-medium text-indigo-300 hover:underline">
           Log in
         </Link>{" "}
         to view your account.
@@ -45,7 +44,7 @@ export default function AccountPage() {
         <span className="text-white">{session.role}</span> —{" "}
         <Link
           href={session.role === "seller" ? "/sell" : "/admin"}
-          className="text-indigo-300 hover:underline"
+          className="font-medium text-indigo-300 hover:underline"
         >
           go to your dashboard →
         </Link>
@@ -56,39 +55,64 @@ export default function AccountPage() {
   const myOrders = (data?.getOrders ?? []).filter((o) => o.userId === session.userId);
 
   return (
-    <div className="max-w-2xl">
-      <h1 className="text-lg font-semibold text-white">{session.username}</h1>
-      <p className="mt-1 text-sm text-neutral-400">{session.email}</p>
+    <div className="max-w-2xl animate-fade-in">
+      <div className="flex items-center gap-3">
+        <div className="flex h-11 w-11 items-center justify-center rounded-full bg-gradient-to-br from-indigo-500 to-violet-600 text-sm font-semibold text-white">
+          {session.username.slice(0, 2).toUpperCase()}
+        </div>
+        <div>
+          <h1 className="text-lg font-semibold text-white">{session.username}</h1>
+          <p className="text-sm text-neutral-400">{session.email}</p>
+        </div>
+      </div>
 
-      <h2 className="mt-8 text-sm font-medium text-white">Order history</h2>
-      <p className="mt-1 text-xs text-neutral-500">
-        Filtered client-side from <code>getOrders</code> — the schema has no
-        per-user order query.
-      </p>
+      <div className="mt-8">
+        <SectionHeading
+          title="Order history"
+          count={!loading ? myOrders.length : undefined}
+          hint="Filtered client-side — the schema has no per-user order query."
+        />
 
-      {loading && <p className="mt-4 text-sm text-neutral-400">Loading…</p>}
-      {error && <p className="mt-4 text-sm text-red-400">{error.message}</p>}
+        {error && (
+          <div className="flex items-center gap-2 rounded-lg border border-red-500/20 bg-red-500/5 px-4 py-3 text-sm text-red-300">
+            <AlertTriangle className="h-4 w-4 shrink-0" strokeWidth={2} />
+            {error.message}
+          </div>
+        )}
 
-      {!loading && !error && myOrders.length === 0 && (
-        <p className="mt-4 text-sm text-neutral-400">No orders yet.</p>
-      )}
+        {loading && (
+          <Card className="divide-y divide-white/10">
+            <CardRowSkeleton />
+            <CardRowSkeleton />
+          </Card>
+        )}
 
-      <div className="mt-4 divide-y divide-white/10 rounded-xl border border-white/10 bg-neutral-900/60">
-        {myOrders.map((order) => (
-          <Link
-            key={order.id}
-            href={`/orders/${order.id}`}
-            className="flex items-center justify-between px-5 py-4 hover:bg-white/5"
-          >
-            <div>
-              <p className="text-sm text-white">Order #{order.id.slice(-6)}</p>
-              <p className="text-xs text-neutral-400">Qty {order.quantity}</p>
-            </div>
-            <span className={`text-xs font-medium ${statusColor[order.status] ?? "text-neutral-400"}`}>
-              {order.status}
-            </span>
-          </Link>
-        ))}
+        {!loading && !error && myOrders.length === 0 && (
+          <Card>
+            <EmptyState icon={ClipboardList} title="No orders yet" description="Requests you place will show up here." />
+          </Card>
+        )}
+
+        {!loading && !error && myOrders.length > 0 && (
+          <Card className="divide-y divide-white/10">
+            {myOrders.map((order) => (
+              <Link
+                key={order.id}
+                href={`/orders/${order.id}`}
+                className="flex items-center justify-between gap-4 px-5 py-4 transition-colors first:rounded-t-2xl last:rounded-b-2xl hover:bg-white/[0.03]"
+              >
+                <div>
+                  <p className="text-sm text-white">Order #{order.id.slice(-6)}</p>
+                  <p className="text-xs text-neutral-400">Qty {order.quantity}</p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Badge variant={STATUS_VARIANT[order.status] ?? "neutral"}>{order.status}</Badge>
+                  <ChevronRight className="h-4 w-4 text-neutral-600" strokeWidth={2} />
+                </div>
+              </Link>
+            ))}
+          </Card>
+        )}
       </div>
     </div>
   );

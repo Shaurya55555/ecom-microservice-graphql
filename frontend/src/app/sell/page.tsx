@@ -3,9 +3,24 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useMutation, useQuery } from "@apollo/client/react";
+import {
+  Store,
+  Check,
+  X,
+  PackagePlus,
+  Package,
+  Inbox,
+  Loader2,
+  AlertCircle,
+  CheckCircle2,
+} from "lucide-react";
 import { CREATE_PRODUCT, RESPOND_TO_ORDER } from "@/lib/graphql/mutations";
 import { GET_PRODUCTS, GET_SELLER_ORDERS } from "@/lib/graphql/queries";
 import { useSession } from "@/lib/useSession";
+import { Card, CardRow, SectionHeading } from "@/components/ui/Card";
+import { CardRowSkeleton } from "@/components/ui/Skeleton";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { Badge, STATUS_VARIANT } from "@/components/ui/Badge";
 
 type Product = {
   id: string;
@@ -21,12 +36,6 @@ type Order = {
   userId: string;
   quantity: number;
   status: string;
-};
-
-const statusColor: Record<string, string> = {
-  Pending: "text-amber-400",
-  Accepted: "text-emerald-400",
-  Rejected: "text-red-400",
 };
 
 export default function SellPage() {
@@ -52,7 +61,7 @@ export default function SellPage() {
   if (!session) {
     return (
       <p className="text-sm text-neutral-400">
-        <Link href="/login" className="text-indigo-300 hover:underline">
+        <Link href="/login" className="font-medium text-indigo-300 hover:underline">
           Log in
         </Link>{" "}
         to access the seller dashboard.
@@ -103,128 +112,193 @@ export default function SellPage() {
   );
 
   return (
-    <div className="max-w-2xl">
-      <h1 className="text-lg font-semibold text-white">Seller dashboard</h1>
-      <p className="mt-1 text-sm text-neutral-400">{session.username}</p>
-
-      <h2 className="mt-8 text-sm font-medium text-white">
-        Order requests {ordersQuery.data ? `(${pendingOrders.length} pending)` : ""}
-      </h2>
-      <p className="mt-1 text-xs text-neutral-500">
-        Buyer requests against your products. Refreshes every 5s.
-      </p>
-
-      {ordersQuery.loading && <p className="mt-4 text-sm text-neutral-400">Loading…</p>}
-      {ordersQuery.error && <p className="mt-4 text-sm text-red-400">{ordersQuery.error.message}</p>}
-
-      <div className="mt-4 divide-y divide-white/10 rounded-xl border border-white/10 bg-neutral-900/60">
-        {pendingOrders.length === 0 && (
-          <p className="px-5 py-4 text-sm text-neutral-400">No pending requests.</p>
-        )}
-        {pendingOrders.map((o) => (
-          <div key={o.id} className="flex items-center justify-between px-5 py-4">
-            <div>
-              <p className="text-sm text-white">{productName(o.productId)}</p>
-              <p className="text-xs text-neutral-400">Qty {o.quantity} · Request #{o.id.slice(-6)}</p>
-            </div>
-            <div className="flex gap-2">
-              <button
-                onClick={() => handleRespond(o.id, true)}
-                disabled={responding && respondingId === o.id}
-                className="rounded-md bg-emerald-500/90 px-3 py-1.5 text-xs font-medium text-white hover:bg-emerald-500 disabled:opacity-60"
-              >
-                Accept
-              </button>
-              <button
-                onClick={() => handleRespond(o.id, false)}
-                disabled={responding && respondingId === o.id}
-                className="rounded-md bg-red-500/90 px-3 py-1.5 text-xs font-medium text-white hover:bg-red-500 disabled:opacity-60"
-              >
-                Reject
-              </button>
-            </div>
-          </div>
-        ))}
-        {pastOrders.map((o) => (
-          <div key={o.id} className="flex items-center justify-between px-5 py-4">
-            <div>
-              <p className="text-sm text-white">{productName(o.productId)}</p>
-              <p className="text-xs text-neutral-400">Qty {o.quantity} · Request #{o.id.slice(-6)}</p>
-            </div>
-            <span className={`text-xs font-medium ${statusColor[o.status] ?? "text-neutral-400"}`}>
-              {o.status}
-            </span>
-          </div>
-        ))}
+    <div className="max-w-2xl animate-fade-in">
+      <div className="flex items-center gap-3">
+        <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 shadow-lg shadow-emerald-500/20">
+          <Store className="h-5 w-5 text-white" strokeWidth={2} />
+        </div>
+        <div>
+          <h1 className="text-lg font-semibold text-white">Seller dashboard</h1>
+          <p className="text-sm text-neutral-400">{session.username}</p>
+        </div>
       </div>
 
-      <div className="mt-8 rounded-xl border border-white/10 bg-neutral-900/60 p-6">
-        <h2 className="text-sm font-medium text-white">List a new product</h2>
+      <div className="mt-6 grid grid-cols-2 gap-3">
+        <Card className="p-4">
+          <p className="text-xs text-neutral-500">Pending requests</p>
+          <p className="mt-1 text-2xl font-semibold text-white">
+            {ordersQuery.data ? pendingOrders.length : "—"}
+          </p>
+        </Card>
+        <Card className="p-4">
+          <p className="text-xs text-neutral-500">Your products</p>
+          <p className="mt-1 text-2xl font-semibold text-white">
+            {productsQuery.data ? myProducts.length : "—"}
+          </p>
+        </Card>
+      </div>
+
+      <div className="mt-8">
+        <SectionHeading
+          title="Order requests"
+          hint="Refreshes every 5s"
+        />
+
+        {ordersQuery.loading && (
+          <Card className="divide-y divide-white/10">
+            <CardRowSkeleton />
+          </Card>
+        )}
+        {ordersQuery.error && (
+          <div className="flex items-center gap-2 rounded-lg border border-red-500/20 bg-red-500/5 px-4 py-3 text-sm text-red-300">
+            <AlertCircle className="h-4 w-4 shrink-0" strokeWidth={2} />
+            {ordersQuery.error.message}
+          </div>
+        )}
+
+        {!ordersQuery.loading && !ordersQuery.error && (
+          <Card className="divide-y divide-white/10">
+            {pendingOrders.length === 0 && pastOrders.length === 0 && (
+              <EmptyState icon={Inbox} title="No requests yet" description="Buyer requests against your products will land here." />
+            )}
+            {pendingOrders.map((o) => (
+              <CardRow key={o.id}>
+                <div>
+                  <p className="text-sm text-white">{productName(o.productId)}</p>
+                  <p className="text-xs text-neutral-400">Qty {o.quantity} · Request #{o.id.slice(-6)}</p>
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => handleRespond(o.id, true)}
+                    disabled={responding && respondingId === o.id}
+                    className="flex items-center gap-1 rounded-md bg-emerald-500/90 px-3 py-1.5 text-xs font-medium text-white hover:bg-emerald-500 disabled:opacity-60"
+                  >
+                    {responding && respondingId === o.id ? (
+                      <Loader2 className="h-3 w-3 animate-spin" strokeWidth={2.5} />
+                    ) : (
+                      <Check className="h-3 w-3" strokeWidth={2.5} />
+                    )}
+                    Accept
+                  </button>
+                  <button
+                    onClick={() => handleRespond(o.id, false)}
+                    disabled={responding && respondingId === o.id}
+                    className="flex items-center gap-1 rounded-md bg-white/5 px-3 py-1.5 text-xs font-medium text-neutral-300 hover:bg-red-500/90 hover:text-white disabled:opacity-60"
+                  >
+                    <X className="h-3 w-3" strokeWidth={2.5} />
+                    Reject
+                  </button>
+                </div>
+              </CardRow>
+            ))}
+            {pastOrders.map((o) => (
+              <CardRow key={o.id}>
+                <div>
+                  <p className="text-sm text-white">{productName(o.productId)}</p>
+                  <p className="text-xs text-neutral-400">Qty {o.quantity} · Request #{o.id.slice(-6)}</p>
+                </div>
+                <Badge variant={STATUS_VARIANT[o.status] ?? "neutral"}>{o.status}</Badge>
+              </CardRow>
+            ))}
+          </Card>
+        )}
+      </div>
+
+      <Card className="mt-8 p-6">
+        <div className="flex items-center gap-2">
+          <PackagePlus className="h-4 w-4 text-neutral-400" strokeWidth={2} />
+          <h2 className="text-sm font-medium text-white">List a new product</h2>
+        </div>
         <form onSubmit={handleSubmit} className="mt-4 space-y-4">
           <div>
-            <label className="mb-1.5 block text-xs text-neutral-400">Name</label>
+            <label className="mb-1.5 block text-xs font-medium text-neutral-400">Name</label>
             <input
               required
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="w-full rounded-md border border-white/10 bg-neutral-950 px-3 py-2 text-sm text-white focus:border-indigo-400/50 focus:outline-none"
+              className="w-full rounded-lg border border-white/10 bg-neutral-950 px-3 py-2 text-sm text-white transition-colors focus:border-indigo-400/50 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
             />
           </div>
           <div>
-            <label className="mb-1.5 block text-xs text-neutral-400">Description</label>
+            <label className="mb-1.5 block text-xs font-medium text-neutral-400">Description</label>
             <input
               required
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              className="w-full rounded-md border border-white/10 bg-neutral-950 px-3 py-2 text-sm text-white focus:border-indigo-400/50 focus:outline-none"
+              className="w-full rounded-lg border border-white/10 bg-neutral-950 px-3 py-2 text-sm text-white transition-colors focus:border-indigo-400/50 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
             />
           </div>
           <div>
-            <label className="mb-1.5 block text-xs text-neutral-400">Price</label>
-            <input
-              type="number"
-              step="0.01"
-              min="0"
-              required
-              value={price}
-              onChange={(e) => setPrice(e.target.value)}
-              className="w-full rounded-md border border-white/10 bg-neutral-950 px-3 py-2 text-sm text-white focus:border-indigo-400/50 focus:outline-none"
-            />
+            <label className="mb-1.5 block text-xs font-medium text-neutral-400">Price</label>
+            <div className="relative">
+              <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-neutral-500">$</span>
+              <input
+                type="number"
+                step="0.01"
+                min="0"
+                required
+                value={price}
+                onChange={(e) => setPrice(e.target.value)}
+                className="w-full rounded-lg border border-white/10 bg-neutral-950 py-2 pl-7 pr-3 text-sm text-white transition-colors focus:border-indigo-400/50 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+              />
+            </div>
           </div>
 
-          {createError && <p className="text-xs text-red-400">{createError.message}</p>}
-          {justAdded && <p className="text-xs text-emerald-400">Product listed.</p>}
+          {createError && (
+            <div className="flex items-start gap-2 rounded-lg border border-red-500/20 bg-red-500/5 px-3 py-2.5 text-xs text-red-300">
+              <AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0" strokeWidth={2} />
+              {createError.message}
+            </div>
+          )}
+          {justAdded && (
+            <div className="flex items-center gap-2 rounded-lg border border-emerald-500/20 bg-emerald-500/5 px-3 py-2.5 text-xs text-emerald-300">
+              <CheckCircle2 className="h-3.5 w-3.5 shrink-0" strokeWidth={2} />
+              Product listed.
+            </div>
+          )}
 
           <button
             type="submit"
             disabled={creating}
-            className="w-full rounded-md bg-indigo-500 py-2.5 text-sm font-medium text-white hover:bg-indigo-400 disabled:opacity-60"
+            className="flex w-full items-center justify-center gap-2 rounded-lg bg-indigo-500 py-2.5 text-sm font-medium text-white shadow-sm shadow-indigo-500/30 transition-colors hover:bg-indigo-400 disabled:opacity-60"
           >
+            {creating && <Loader2 className="h-4 w-4 animate-spin" strokeWidth={2} />}
             {creating ? "Listing…" : "List product"}
           </button>
         </form>
-      </div>
+      </Card>
 
-      <h2 className="mt-8 text-sm font-medium text-white">Your products</h2>
+      <div className="mt-8">
+        <SectionHeading title="Your products" count={!productsQuery.loading ? myProducts.length : undefined} />
 
-      {productsQuery.loading && <p className="mt-4 text-sm text-neutral-400">Loading…</p>}
-      {productsQuery.error && (
-        <p className="mt-4 text-sm text-red-400">{productsQuery.error.message}</p>
-      )}
-
-      <div className="mt-4 divide-y divide-white/10 rounded-xl border border-white/10 bg-neutral-900/60">
-        {myProducts.length === 0 && (
-          <p className="px-5 py-4 text-sm text-neutral-400">You haven&apos;t listed anything yet.</p>
+        {productsQuery.loading && (
+          <Card className="divide-y divide-white/10">
+            <CardRowSkeleton />
+          </Card>
         )}
-        {myProducts.map((p) => (
-          <div key={p.id} className="flex items-center justify-between px-5 py-4">
-            <div>
-              <p className="text-sm text-white">{p.name}</p>
-              <p className="text-xs text-neutral-400">{p.description}</p>
-            </div>
-            <span className="text-sm font-medium text-indigo-300">${p.price.toFixed(2)}</span>
+        {productsQuery.error && (
+          <div className="flex items-center gap-2 rounded-lg border border-red-500/20 bg-red-500/5 px-4 py-3 text-sm text-red-300">
+            <AlertCircle className="h-4 w-4 shrink-0" strokeWidth={2} />
+            {productsQuery.error.message}
           </div>
-        ))}
+        )}
+
+        {!productsQuery.loading && !productsQuery.error && (
+          <Card className="divide-y divide-white/10">
+            {myProducts.length === 0 && (
+              <EmptyState icon={Package} title="Nothing listed yet" description="Products you list will show up here." />
+            )}
+            {myProducts.map((p) => (
+              <CardRow key={p.id}>
+                <div>
+                  <p className="text-sm text-white">{p.name}</p>
+                  <p className="text-xs text-neutral-400">{p.description}</p>
+                </div>
+                <span className="text-sm font-medium text-white">${p.price.toFixed(2)}</span>
+              </CardRow>
+            ))}
+          </Card>
+        )}
       </div>
     </div>
   );

@@ -2,9 +2,22 @@
 
 import Link from "next/link";
 import { useMutation, useQuery } from "@apollo/client/react";
+import {
+  ShieldCheck,
+  Users,
+  ClipboardList,
+  Package,
+  Ban,
+  RotateCcw,
+  AlertCircle,
+} from "lucide-react";
 import { GET_ACCOUNTS, GET_ORDERS, GET_PRODUCTS } from "@/lib/graphql/queries";
 import { SET_ACCOUNT_ACTIVE } from "@/lib/graphql/mutations";
 import { useSession } from "@/lib/useSession";
+import { Card, CardRow, SectionHeading } from "@/components/ui/Card";
+import { CardRowSkeleton } from "@/components/ui/Skeleton";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { Badge, ROLE_VARIANT, STATUS_VARIANT } from "@/components/ui/Badge";
 
 type Product = {
   id: string;
@@ -29,11 +42,17 @@ type Account = {
   active: boolean;
 };
 
-const statusColor: Record<string, string> = {
-  Pending: "text-amber-400",
-  Accepted: "text-emerald-400",
-  Rejected: "text-red-400",
-};
+function StatCard({ icon: Icon, label, value }: { icon: typeof Users; label: string; value: number | string }) {
+  return (
+    <Card className="p-4">
+      <div className="flex items-center gap-2 text-neutral-500">
+        <Icon className="h-3.5 w-3.5" strokeWidth={2} />
+        <p className="text-xs">{label}</p>
+      </div>
+      <p className="mt-1.5 text-2xl font-semibold text-white">{value}</p>
+    </Card>
+  );
+}
 
 export default function AdminPage() {
   const { session, ready } = useSession();
@@ -48,7 +67,7 @@ export default function AdminPage() {
   if (!session) {
     return (
       <p className="text-sm text-neutral-400">
-        <Link href="/login" className="text-indigo-300 hover:underline">
+        <Link href="/login" className="font-medium text-indigo-300 hover:underline">
           Log in
         </Link>{" "}
         to access the admin dashboard.
@@ -71,85 +90,151 @@ export default function AdminPage() {
   }
 
   return (
-    <div className="max-w-2xl">
-      <h1 className="text-lg font-semibold text-white">Admin dashboard</h1>
-      <p className="mt-1 text-sm text-neutral-400">{session.username}</p>
-
-      <h2 className="mt-8 text-sm font-medium text-white">
-        Users &amp; sellers {accounts.data ? `(${accounts.data.getAccounts.length})` : ""}
-      </h2>
-      <p className="mt-1 text-xs text-neutral-500">
-        Deactivating an account blocks it from logging in.
-      </p>
-      {accounts.loading && <p className="mt-4 text-sm text-neutral-400">Loading…</p>}
-      {accounts.error && <p className="mt-4 text-sm text-red-400">{accounts.error.message}</p>}
-      <div className="mt-4 divide-y divide-white/10 rounded-xl border border-white/10 bg-neutral-900/60">
-        {(accounts.data?.getAccounts ?? []).map((a) => (
-          <div key={a.id} className="flex items-center justify-between px-5 py-4">
-            <div>
-              <p className="text-sm text-white">
-                {a.username} <span className="text-xs text-neutral-500">({a.role})</span>
-              </p>
-              <p className="text-xs text-neutral-400">{a.email}</p>
-            </div>
-            {a.role === "admin" ? (
-              <span className="text-xs text-neutral-500">—</span>
-            ) : (
-              <button
-                onClick={() => toggleActive(a.id, !a.active)}
-                disabled={togglingAny}
-                className={`rounded-md px-3 py-1.5 text-xs font-medium disabled:opacity-60 ${
-                  a.active
-                    ? "border border-white/15 text-neutral-300 hover:border-red-400/50 hover:text-red-400"
-                    : "bg-emerald-500/90 text-white hover:bg-emerald-500"
-                }`}
-              >
-                {a.active ? "Deactivate" : "Activate"}
-              </button>
-            )}
-          </div>
-        ))}
+    <div className="max-w-2xl animate-fade-in">
+      <div className="flex items-center gap-3">
+        <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 shadow-lg shadow-amber-500/20">
+          <ShieldCheck className="h-5 w-5 text-white" strokeWidth={2} />
+        </div>
+        <div>
+          <h1 className="text-lg font-semibold text-white">Admin dashboard</h1>
+          <p className="text-sm text-neutral-400">{session.username}</p>
+        </div>
       </div>
 
-      <h2 className="mt-8 text-sm font-medium text-white">
-        All orders {orders.data ? `(${orders.data.getOrders.length})` : ""}
-      </h2>
-      {orders.loading && <p className="mt-4 text-sm text-neutral-400">Loading…</p>}
-      {orders.error && <p className="mt-4 text-sm text-red-400">{orders.error.message}</p>}
-      <div className="mt-4 divide-y divide-white/10 rounded-xl border border-white/10 bg-neutral-900/60">
-        {(orders.data?.getOrders ?? []).map((o) => (
-          <div key={o.id} className="flex items-center justify-between px-5 py-4">
-            <div>
-              <p className="text-sm text-white">Order #{o.id.slice(-6)}</p>
-              <p className="text-xs text-neutral-400">
-                User {o.userId.slice(-6)} · Product {o.productId.slice(-6)} · Qty {o.quantity}
-              </p>
-            </div>
-            <span className={`text-xs font-medium ${statusColor[o.status] ?? "text-neutral-400"}`}>
-              {o.status}
-            </span>
+      <div className="mt-6 grid grid-cols-3 gap-3">
+        <StatCard icon={Users} label="Accounts" value={accounts.data?.getAccounts.length ?? "—"} />
+        <StatCard icon={ClipboardList} label="Orders" value={orders.data?.getOrders.length ?? "—"} />
+        <StatCard icon={Package} label="Products" value={products.data?.getProducts.length ?? "—"} />
+      </div>
+
+      <div className="mt-8">
+        <SectionHeading title="Users & sellers" hint="Deactivating blocks login." />
+
+        {accounts.loading && (
+          <Card className="divide-y divide-white/10">
+            <CardRowSkeleton />
+          </Card>
+        )}
+        {accounts.error && (
+          <div className="flex items-center gap-2 rounded-lg border border-red-500/20 bg-red-500/5 px-4 py-3 text-sm text-red-300">
+            <AlertCircle className="h-4 w-4 shrink-0" strokeWidth={2} />
+            {accounts.error.message}
           </div>
-        ))}
-        {orders.data?.getOrders.length === 0 && (
-          <p className="px-5 py-4 text-sm text-neutral-400">No orders yet.</p>
+        )}
+        {!accounts.loading && !accounts.error && (
+          <Card className="divide-y divide-white/10">
+            {(accounts.data?.getAccounts ?? []).length === 0 && (
+              <EmptyState icon={Users} title="No accounts" />
+            )}
+            {(accounts.data?.getAccounts ?? []).map((a) => (
+              <CardRow key={a.id}>
+                <div className="flex items-center gap-2.5">
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white/5 text-xs font-semibold text-neutral-300">
+                    {a.username.slice(0, 2).toUpperCase()}
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <p className="text-sm text-white">{a.username}</p>
+                      <Badge variant={ROLE_VARIANT[a.role] ?? "neutral"}>{a.role}</Badge>
+                    </div>
+                    <p className="text-xs text-neutral-400">{a.email}</p>
+                  </div>
+                </div>
+                {a.role === "admin" ? (
+                  <span className="text-xs text-neutral-600">—</span>
+                ) : (
+                  <button
+                    onClick={() => toggleActive(a.id, !a.active)}
+                    disabled={togglingAny}
+                    className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium disabled:opacity-60 ${
+                      a.active
+                        ? "border border-white/15 text-neutral-300 hover:border-red-400/50 hover:text-red-400"
+                        : "bg-emerald-500/90 text-white hover:bg-emerald-500"
+                    }`}
+                  >
+                    {a.active ? (
+                      <>
+                        <Ban className="h-3 w-3" strokeWidth={2} />
+                        Deactivate
+                      </>
+                    ) : (
+                      <>
+                        <RotateCcw className="h-3 w-3" strokeWidth={2} />
+                        Activate
+                      </>
+                    )}
+                  </button>
+                )}
+              </CardRow>
+            ))}
+          </Card>
         )}
       </div>
 
-      <h2 className="mt-8 text-sm font-medium text-white">
-        All products {products.data ? `(${products.data.getProducts.length})` : ""}
-      </h2>
-      {products.loading && <p className="mt-4 text-sm text-neutral-400">Loading…</p>}
-      {products.error && <p className="mt-4 text-sm text-red-400">{products.error.message}</p>}
-      <div className="mt-4 divide-y divide-white/10 rounded-xl border border-white/10 bg-neutral-900/60">
-        {(products.data?.getProducts ?? []).map((p) => (
-          <div key={p.id} className="flex items-center justify-between px-5 py-4">
-            <div>
-              <p className="text-sm text-white">{p.name}</p>
-              <p className="text-xs text-neutral-400">{p.description}</p>
-            </div>
-            <span className="text-sm font-medium text-indigo-300">${p.price.toFixed(2)}</span>
+      <div className="mt-8">
+        <SectionHeading title="All orders" />
+
+        {orders.loading && (
+          <Card className="divide-y divide-white/10">
+            <CardRowSkeleton />
+          </Card>
+        )}
+        {orders.error && (
+          <div className="flex items-center gap-2 rounded-lg border border-red-500/20 bg-red-500/5 px-4 py-3 text-sm text-red-300">
+            <AlertCircle className="h-4 w-4 shrink-0" strokeWidth={2} />
+            {orders.error.message}
           </div>
-        ))}
+        )}
+        {!orders.loading && !orders.error && (
+          <Card className="divide-y divide-white/10">
+            {(orders.data?.getOrders ?? []).length === 0 && (
+              <EmptyState icon={ClipboardList} title="No orders yet" />
+            )}
+            {(orders.data?.getOrders ?? []).map((o) => (
+              <CardRow key={o.id}>
+                <div>
+                  <p className="text-sm text-white">Order #{o.id.slice(-6)}</p>
+                  <p className="text-xs text-neutral-400">
+                    User {o.userId.slice(-6)} · Product {o.productId.slice(-6)} · Qty {o.quantity}
+                  </p>
+                </div>
+                <Badge variant={STATUS_VARIANT[o.status] ?? "neutral"}>{o.status}</Badge>
+              </CardRow>
+            ))}
+          </Card>
+        )}
+      </div>
+
+      <div className="mt-8">
+        <SectionHeading title="All products" />
+
+        {products.loading && (
+          <Card className="divide-y divide-white/10">
+            <CardRowSkeleton />
+          </Card>
+        )}
+        {products.error && (
+          <div className="flex items-center gap-2 rounded-lg border border-red-500/20 bg-red-500/5 px-4 py-3 text-sm text-red-300">
+            <AlertCircle className="h-4 w-4 shrink-0" strokeWidth={2} />
+            {products.error.message}
+          </div>
+        )}
+        {!products.loading && !products.error && (
+          <Card className="divide-y divide-white/10">
+            {(products.data?.getProducts ?? []).length === 0 && (
+              <EmptyState icon={Package} title="No products yet" />
+            )}
+            {(products.data?.getProducts ?? []).map((p) => (
+              <CardRow key={p.id}>
+                <div>
+                  <p className="text-sm text-white">{p.name}</p>
+                  <p className="text-xs text-neutral-400">{p.description}</p>
+                </div>
+                <span className="text-sm font-medium text-white">${p.price.toFixed(2)}</span>
+              </CardRow>
+            ))}
+          </Card>
+        )}
       </div>
     </div>
   );
