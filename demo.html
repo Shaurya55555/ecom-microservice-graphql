@@ -1,0 +1,241 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Ecom Microservice GraphQL — Live Demo</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<style>
+  :root {
+    --bg: #0a0c11;
+    --panel: #0e1116;
+    --surface: #12151c;
+    --surface-2: #171b24;
+    --border: #232833;
+    --text: #eef1f6;
+    --text-dim: #9aa3b2;
+    --text-faint: #5c6474;
+    --accent: #5b8cff;
+    --accent-2: #8b5bff;
+    --accent-soft: rgba(91, 140, 255, 0.12);
+    --error: #ff6b6b;
+    --success: #4ade80;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    line-height: 1.6;
+    padding: 40px 20px 80px;
+  }
+  .wrap { max-width: 760px; margin: 0 auto; }
+  h1 { font-size: 1.8rem; margin: 0 0 8px; }
+  .sub { color: var(--text-dim); margin: 0 0 24px; }
+  .notice {
+    background: var(--accent-soft);
+    border: 1px solid rgba(91,140,255,0.3);
+    border-radius: 10px;
+    padding: 12px 16px;
+    font-size: 0.82rem;
+    line-height: 1.55;
+    color: var(--text-dim);
+    margin-bottom: 28px;
+  }
+  .notice a { color: var(--accent); }
+  .notice strong { color: var(--text); }
+
+  .panel {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 24px;
+    margin-bottom: 24px;
+  }
+  .panel h2 { font-size: 1.05rem; margin: 0 0 14px; }
+
+  table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+  th, td { text-align: left; padding: 10px 8px; border-bottom: 1px solid var(--border); }
+  th { color: var(--text-dim); font-weight: 600; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.03em; }
+  td.price { color: var(--success); font-variant-numeric: tabular-nums; }
+
+  .row { display: flex; gap: 10px; flex-wrap: wrap; }
+  .field { flex: 1; min-width: 140px; }
+  label { display: block; font-size: 0.76rem; color: var(--text-dim); margin-bottom: 5px; }
+  input {
+    width: 100%;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 9px 10px;
+    color: var(--text);
+    font-size: 0.88rem;
+    outline: none;
+  }
+  input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+
+  button {
+    background: linear-gradient(135deg, var(--accent), var(--accent-2));
+    border: none;
+    border-radius: 8px;
+    padding: 10px 16px;
+    color: #fff;
+    font-size: 0.88rem;
+    font-weight: 600;
+    cursor: pointer;
+    margin-top: 14px;
+  }
+  button:hover { filter: brightness(1.08); }
+  button:disabled { opacity: 0.6; cursor: not-allowed; }
+
+  .msg { margin-top: 12px; font-size: 0.82rem; display: none; }
+  .msg.show { display: block; }
+  .msg.error { color: var(--error); }
+  .msg.success { color: var(--success); }
+
+  details { margin-top: 10px; }
+  summary { cursor: pointer; color: var(--text-dim); font-size: 0.8rem; }
+  pre {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px;
+    overflow-x: auto;
+    font-size: 0.78rem;
+    color: var(--text-dim);
+    margin-top: 8px;
+  }
+
+  .back { display: inline-block; margin-bottom: 20px; color: var(--accent); text-decoration: none; font-size: 0.85rem; }
+  .back:hover { text-decoration: underline; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="index.html">← Back to showcase</a>
+  <h1>Live GraphQL Demo</h1>
+  <p class="sub">Runs real queries/mutations against a live GraphQL endpoint.</p>
+
+  <div class="notice">
+    <strong>Real GraphQL, demo backend.</strong> This page talks to
+    <a href="https://ecom-demo-gateway.onrender.com">ecom-demo-gateway</a>, a small standalone service exposing the
+    <em>same schema</em> as this repo's <code>graphql-gateway</code> (<code>getProducts</code>, <code>createProduct</code>, …),
+    backed by a JSON file instead of the full MongoDB + Kafka + 3-service stack in
+    <a href="https://github.com/Shaurya55555/ecom-microservice-graphql">the main repo</a> — that stack needs
+    infra this static page can't run. It's on a free tier, so data resets periodically and the first request
+    after idling can take ~30s to wake up. Source:
+    <a href="https://github.com/Shaurya55555/ecom-demo-gateway">ecom-demo-gateway repo</a>.
+  </div>
+
+  <div class="panel">
+    <h2>Products (live query)</h2>
+    <table>
+      <thead><tr><th>Name</th><th>Description</th><th>Price</th></tr></thead>
+      <tbody id="productRows"><tr><td colspan="3" style="color:var(--text-dim)">Loading…</td></tr></tbody>
+    </table>
+    <div class="msg" id="listMsg"></div>
+  </div>
+
+  <div class="panel">
+    <h2>Add a product (live mutation)</h2>
+    <form id="addForm">
+      <div class="row">
+        <div class="field">
+          <label for="name">Name</label>
+          <input id="name" type="text" placeholder="Desk Lamp" required />
+        </div>
+        <div class="field">
+          <label for="price">Price</label>
+          <input id="price" type="number" step="0.01" min="0" placeholder="24.99" required />
+        </div>
+      </div>
+      <div class="field" style="margin-top:10px">
+        <label for="description">Description</label>
+        <input id="description" type="text" placeholder="Adjustable LED desk lamp" required />
+      </div>
+      <button type="submit" id="submitBtn">Create Product</button>
+      <div class="msg" id="addMsg"></div>
+    </form>
+    <details>
+      <summary>View the GraphQL mutation this sends</summary>
+      <pre>mutation {
+  createProduct(name: $name, description: $description, price: $price) {
+    id name description price
+  }
+}</pre>
+    </details>
+  </div>
+</div>
+
+<script>
+  const API = 'https://ecom-demo-gateway.onrender.com/';
+
+  async function gql(query, variables) {
+    const res = await fetch(API, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ query, variables }),
+    });
+    const json = await res.json();
+    if (json.errors) throw new Error(json.errors[0].message);
+    return json.data;
+  }
+
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, (c) => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+  }
+
+  async function loadProducts() {
+    const rows = document.getElementById('productRows');
+    const msg = document.getElementById('listMsg');
+    msg.className = 'msg show success';
+    msg.textContent = 'Waking up the free-tier server (can take ~30s on first request)…';
+    try {
+      const data = await gql('{ getProducts { id name description price } }');
+      const products = data.getProducts || [];
+      rows.innerHTML = products.length
+        ? products.map(p => `<tr><td>${escapeHtml(p.name)}</td><td>${escapeHtml(p.description)}</td><td class="price">$${Number(p.price).toFixed(2)}</td></tr>`).join('')
+        : '<tr><td colspan="3" style="color:var(--text-dim)">No products yet.</td></tr>';
+      msg.className = 'msg';
+    } catch (err) {
+      msg.className = 'msg show error';
+      msg.textContent = 'Could not reach the demo gateway. It may be spinning up — try again in a few seconds.';
+    }
+  }
+
+  document.getElementById('addForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const name = document.getElementById('name').value.trim();
+    const description = document.getElementById('description').value.trim();
+    const price = parseFloat(document.getElementById('price').value);
+    const btn = document.getElementById('submitBtn');
+    const msg = document.getElementById('addMsg');
+
+    if (!name || !description || isNaN(price)) return;
+
+    btn.disabled = true;
+    btn.textContent = 'Creating…';
+    msg.className = 'msg show success';
+    msg.textContent = 'Sending mutation…';
+
+    try {
+      await gql(
+        'mutation($name: String!, $description: String!, $price: Float!) { createProduct(name: $name, description: $description, price: $price) { id } }',
+        { name, description, price }
+      );
+      msg.textContent = 'Product created.';
+      document.getElementById('addForm').reset();
+      loadProducts();
+    } catch (err) {
+      msg.className = 'msg show error';
+      msg.textContent = err.message || 'Something went wrong.';
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Create Product';
+    }
+  });
+
+  loadProducts();
+</script>
+</body>
+</html>

@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Ecom Microservice GraphQL — Project Showcase</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<style>
+  :root {
+    --bg: #0b0d12;
+    --surface: #12151c;
+    --border: #232833;
+    --text: #e6e9ef;
+    --text-dim: #9aa3b2;
+    --accent: #5b8cff;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    line-height: 1.6;
+  }
+  .wrap { max-width: 840px; margin: 0 auto; padding: 64px 24px 96px; }
+  .badge {
+    display: inline-block;
+    font-size: 0.75rem;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--accent);
+    border: 1px solid var(--accent);
+    border-radius: 999px;
+    padding: 4px 12px;
+    margin-bottom: 20px;
+  }
+  h1 { font-size: 2.4rem; margin: 0 0 8px; }
+  .tagline { color: var(--text-dim); font-size: 1.1rem; margin-bottom: 32px; }
+  .notice {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--accent);
+    border-radius: 8px;
+    padding: 14px 18px;
+    font-size: 0.92rem;
+    color: var(--text-dim);
+    margin-bottom: 40px;
+  }
+  h2 { font-size: 1.3rem; margin-top: 48px; border-bottom: 1px solid var(--border); padding-bottom: 10px; }
+  ul { padding-left: 20px; }
+  li { margin-bottom: 6px; }
+  .stack {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 12px;
+  }
+  .chip {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 6px 12px;
+    font-size: 0.85rem;
+    color: var(--text-dim);
+  }
+  pre {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px;
+    overflow-x: auto;
+    font-size: 0.82rem;
+    color: var(--text-dim);
+  }
+  a.cta {
+    display: inline-block;
+    margin-top: 16px;
+    color: var(--accent);
+    text-decoration: none;
+    font-weight: 600;
+  }
+  a.cta:hover { text-decoration: underline; }
+  footer {
+    margin-top: 64px;
+    padding-top: 24px;
+    border-top: 1px solid var(--border);
+    color: var(--text-dim);
+    font-size: 0.85rem;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <span class="badge">Project Showcase</span>
+  <h1>Ecom Microservice GraphQL</h1>
+  <p class="tagline">An event-driven e-commerce backend split across Node.js microservices behind a unified GraphQL gateway.</p>
+
+  <div class="notice">
+    This is a documentation/showcase page for the project — it does not run the full microservices stack live
+    (the app depends on MongoDB, Kafka, and three Dockerized services running together). For the full source and
+    setup instructions, see the <a href="https://github.com/Shaurya55555/ecom-microservice-graphql" style="color:inherit">GitHub repository</a>.
+  </div>
+
+  <h2>Overview</h2>
+  <p>
+    Ecom Microservice GraphQL is a scalable e-commerce platform built around three independent services —
+    user, product, and order — each with its own MongoDB store. A GraphQL API gateway sits in front of them,
+    giving clients a single unified schema instead of three separate REST APIs. Kafka decouples the services
+    from each other so a change in one (e.g. an order being placed) can be published as an event and consumed
+    asynchronously by the others, without direct service-to-service calls.
+  </p>
+
+  <h2>Key Features</h2>
+  <ul>
+    <li>Three independent Node.js/Express microservices (user, product, order), each with its own MongoDB store</li>
+    <li>Unified GraphQL API gateway (Apollo Server) fronting all three services</li>
+    <li>Kafka event bus for asynchronous, decoupled communication between services</li>
+    <li>Per-service Dockerfiles plus a root <code>docker-compose.yml</code> to run the whole stack together</li>
+    <li>Integration tests per service (Jest)</li>
+  </ul>
+
+  <h2>Tech Stack</h2>
+  <div class="stack">
+    <span class="chip">Node.js</span>
+    <span class="chip">Express</span>
+    <span class="chip">MongoDB / Mongoose</span>
+    <span class="chip">Apache Kafka</span>
+    <span class="chip">GraphQL (Apollo Server)</span>
+    <span class="chip">Docker &amp; Docker Compose</span>
+  </div>
+
+  <h2>Architecture</h2>
+  <pre>ecom-microservice-graphql/
+├── user-service/         # User registration, auth — own MongoDB store
+├── product-service/      # Product catalog CRUD — own MongoDB store
+├── order-service/        # Order management — own MongoDB store
+├── graphql-gateway/      # Apollo Server — unified schema over all 3 services
+├── kafka/                # Topic config + consumers for cross-service events
+├── docker-compose.yml    # Runs Mongo, Kafka, and all 4 services together
+</pre>
+
+  <a class="cta" href="https://github.com/Shaurya55555/ecom-microservice-graphql">View source on GitHub →</a>
+  &nbsp;&nbsp;
+  <a class="cta" href="demo.html">Try the live GraphQL demo →</a>
+
+  <footer>
+    Source hosted on GitHub — this page is a static showcase only.
+  </footer>
+</div>
+</body>
+</html>
