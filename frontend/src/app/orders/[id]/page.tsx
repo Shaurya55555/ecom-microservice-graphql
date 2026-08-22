@@ -13,7 +13,7 @@ type Order = {
   status: string;
 };
 
-const STEPS = ["Pending", "Completed"];
+const STEPS = ["Pending", "Accepted"];
 
 export default function OrderTrackingPage({
   params,
@@ -27,7 +27,7 @@ export default function OrderTrackingPage({
   });
 
   const order = data?.getOrder;
-  const isCancelled = order?.status === "Cancelled";
+  const isRejected = order?.status === "Rejected";
   const stepIndex = order ? Math.max(STEPS.indexOf(order.status), 0) : 0;
 
   return (
@@ -51,7 +51,7 @@ export default function OrderTrackingPage({
             <span className="text-white">{order.quantity}</span>
           </p>
 
-          {!isCancelled ? (
+          {!isRejected ? (
             <div className="mt-6 flex items-center gap-2">
               {STEPS.map((step, i) => (
                 <div key={step} className="flex flex-1 items-center gap-2">
@@ -68,9 +68,9 @@ export default function OrderTrackingPage({
 
           <p
             className={`mt-3 text-sm font-medium ${
-              isCancelled
+              isRejected
                 ? "text-red-400"
-                : order.status === "Completed"
+                : order.status === "Accepted"
                 ? "text-emerald-400"
                 : "text-amber-400"
             }`}
@@ -79,10 +79,8 @@ export default function OrderTrackingPage({
           </p>
 
           <p className="mt-6 text-xs text-neutral-500">
-            Polling <code>getOrder</code> every 3s. In the current backend nothing
-            transitions an order past <code>Pending</code> yet — the Kafka order
-            consumer only logs the event, it doesn&apos;t write a new status. This
-            page is wired for when that&apos;s added.
+            Polling <code>getOrder</code> every 3s — this updates live once the seller
+            accepts or rejects the request from their dashboard.
           </p>
         </div>
       )}

@@ -16,9 +16,8 @@ type RegisterResult = {
 };
 
 const ROLES: { value: Role; label: string; blurb: string }[] = [
-  { value: "user", label: "Buyer", blurb: "Browse products, add to cart, place orders" },
-  { value: "seller", label: "Seller", blurb: "List products for sale" },
-  { value: "admin", label: "Admin", blurb: "View all orders and products" },
+  { value: "user", label: "Buyer", blurb: "Search products, add to cart, request an order" },
+  { value: "seller", label: "Seller", blurb: "List products, view and accept order requests" },
 ];
 
 export default function SignupPage() {

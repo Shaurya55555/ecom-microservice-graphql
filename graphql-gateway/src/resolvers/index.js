@@ -1,6 +1,19 @@
 const axios = require('axios');
 
+function authHeaders(context) {
+  return context.authorization ? { headers: { Authorization: context.authorization } } : {};
+}
+
 const resolvers = {
+  Product: {
+    id: (p) => p.id || p._id,
+  },
+  Order: {
+    id: (o) => o.id || o._id,
+  },
+  Account: {
+    id: (a) => a.id || a._id,
+  },
   Query: {
     getUsers: async () => {
       const response = await axios.get(`${process.env.USER_SERVICE_URL}/users`);
@@ -26,21 +39,41 @@ const resolvers = {
       const response = await axios.get(`${process.env.ORDER_SERVICE_URL}/orders/${id}`);
       return response.data;
     },
+    getSellerOrders: async (_, __, context) => {
+      const response = await axios.get(`${process.env.ORDER_SERVICE_URL}/orders/seller`, authHeaders(context));
+      return response.data;
+    },
+    getAccounts: async (_, __, context) => {
+      const response = await axios.get(`${process.env.USER_SERVICE_URL}/users`, authHeaders(context));
+      return response.data;
+    },
   },
   Mutation: {
     createUser: async (_, { name, email }) => {
       const response = await axios.post(`${process.env.USER_SERVICE_URL}/users`, { name, email });
       return response.data;
     },
-    createProduct: async (_, { name, description, price }) => {
-      const response = await axios.post(`${process.env.PRODUCT_SERVICE_URL}/products`, { name, description, price });
+    createProduct: async (_, { name, description, price }, context) => {
+      const response = await axios.post(
+        `${process.env.PRODUCT_SERVICE_URL}/products`,
+        { name, description, price },
+        authHeaders(context)
+      );
       return response.data;
     },
     createOrder: async (_, { productId, userId, quantity }, context) => {
       const response = await axios.post(
         `${process.env.ORDER_SERVICE_URL}/orders`,
         { productId, userId, quantity },
-        { headers: context.authorization ? { Authorization: context.authorization } : {} }
+        authHeaders(context)
+      );
+      return response.data;
+    },
+    respondToOrder: async (_, { id, accept }, context) => {
+      const response = await axios.patch(
+        `${process.env.ORDER_SERVICE_URL}/orders/${id}/status`,
+        { accept },
+        authHeaders(context)
       );
       return response.data;
     },
@@ -50,6 +83,14 @@ const resolvers = {
     },
     login: async (_, { email, password }) => {
       const response = await axios.post(`${process.env.USER_SERVICE_URL}/users/login`, { email, password });
+      return response.data;
+    },
+    setAccountActive: async (_, { userId, active }, context) => {
+      const response = await axios.patch(
+        `${process.env.USER_SERVICE_URL}/users/${userId}/active`,
+        { active },
+        authHeaders(context)
+      );
       return response.data;
     },
   },

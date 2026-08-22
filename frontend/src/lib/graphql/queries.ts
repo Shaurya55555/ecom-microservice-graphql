@@ -7,6 +7,7 @@ export const GET_PRODUCTS = gql`
       name
       description
       price
+      sellerId
     }
   }
 `;
@@ -42,6 +43,30 @@ export const GET_ORDER = gql`
       userId
       quantity
       status
+    }
+  }
+`;
+
+export const GET_SELLER_ORDERS = gql`
+  query GetSellerOrders {
+    getSellerOrders {
+      id
+      productId
+      userId
+      quantity
+      status
+    }
+  }
+`;
+
+export const GET_ACCOUNTS = gql`
+  query GetAccounts {
+    getAccounts {
+      id
+      username
+      email
+      role
+      active
     }
   }
 `;

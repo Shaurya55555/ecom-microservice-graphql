@@ -15,8 +15,8 @@ type Order = {
 
 const statusColor: Record<string, string> = {
   Pending: "text-amber-400",
-  Completed: "text-emerald-400",
-  Cancelled: "text-red-400",
+  Accepted: "text-emerald-400",
+  Rejected: "text-red-400",
 };
 
 export default function AccountPage() {

@@ -43,3 +43,21 @@ export const CREATE_ORDER = gql`
     }
   }
 `;
+
+export const RESPOND_TO_ORDER = gql`
+  mutation RespondToOrder($id: ID!, $accept: Boolean!) {
+    respondToOrder(id: $id, accept: $accept) {
+      id
+      status
+    }
+  }
+`;
+
+export const SET_ACCOUNT_ACTIVE = gql`
+  mutation SetAccountActive($userId: ID!, $active: Boolean!) {
+    setAccountActive(userId: $userId, active: $active) {
+      id
+      active
+    }
+  }
+`;
