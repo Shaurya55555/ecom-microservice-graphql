@@ -1,19 +1,18 @@
 "use client";
 
 import { useState } from "react";
-import { cn, hashString } from "@/lib/utils";
+import { cn } from "@/lib/utils";
 import { getCategory } from "@/lib/categories";
 
 /**
  * Product artwork. Uses the seller-supplied image when there is one and falls
- * back to a category-themed illustration when there isn't (or it fails to load),
- * so cards never render a broken-image icon.
+ * back to a flat, category-toned swatch with a simple icon when there isn't
+ * (or it fails to load), so cards never render a broken-image icon.
  */
 export function ProductImage({
   src,
   alt,
   category,
-  seed,
   className,
   iconClassName,
   priority = false,
@@ -21,7 +20,8 @@ export function ProductImage({
   src?: string | null;
   alt: string;
   category?: string | null;
-  seed: string;
+  /** Kept for call-site compatibility; the swatch is no longer randomised. */
+  seed?: string;
   className?: string;
   iconClassName?: string;
   priority?: boolean;
@@ -30,7 +30,6 @@ export function ProductImage({
   const showImage = !!src && failedSrc !== src;
   const cat = getCategory(category);
   const Icon = cat.icon;
-  const angle = hashString(seed, 4) * 90;
 
   return (
     <div className={cn("relative overflow-hidden bg-surface-2", className)}>
@@ -43,27 +42,13 @@ export function ProductImage({
           loading={priority ? "eager" : "lazy"}
           decoding="async"
           onError={() => setFailedSrc(src)}
-          className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+          className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
         />
       ) : (
-        <div
-          role="img"
-          aria-label={alt}
-          className={cn("flex h-full w-full items-center justify-center bg-gradient-to-br", cat.gradient)}
-        >
-          <div
-            aria-hidden
-            className="absolute inset-0 opacity-[0.5]"
-            style={{
-              backgroundImage:
-                "radial-gradient(circle at 1px 1px, var(--line-strong) 1px, transparent 0)",
-              backgroundSize: "18px 18px",
-              transform: `rotate(${angle}deg) scale(1.5)`,
-            }}
-          />
+        <div role="img" aria-label={alt} className={cn("flex h-full w-full items-center justify-center", cat.tone)}>
           <Icon
-            className={cn("relative h-1/3 w-1/3 text-fg/45", iconClassName)}
-            strokeWidth={1.25}
+            className={cn("h-1/4 w-1/4 text-fg/35", iconClassName)}
+            strokeWidth={1}
             aria-hidden
           />
         </div>

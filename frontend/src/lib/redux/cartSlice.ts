@@ -59,13 +59,25 @@ const cartSlice = createSlice({
         item.quantity = next;
       }
     },
+    /** Adjust a line by a signed amount; the line disappears if it reaches zero (used by "Undo add"). */
+    changeQuantity(state, action: PayloadAction<{ productId: string; delta: number }>) {
+      const item = state.items.find((i) => i.productId === action.payload.productId);
+      if (!item) return;
+      const next = clamp(item.quantity + action.payload.delta);
+      if (next <= 0) {
+        state.items = state.items.filter((i) => i.productId !== action.payload.productId);
+      } else {
+        item.quantity = next;
+      }
+    },
     clearCart(state) {
       state.items = [];
     },
   },
 });
 
-export const { hydrateCart, addItem, removeItem, setQuantity, clearCart } = cartSlice.actions;
+export const { hydrateCart, addItem, removeItem, setQuantity, changeQuantity, clearCart } =
+  cartSlice.actions;
 export default cartSlice.reducer;
 
 type WithCart = { cart: CartState };

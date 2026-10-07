@@ -7,21 +7,30 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/Button";
 import { useAppDispatch } from "@/lib/redux/hooks";
-import { addItem } from "@/lib/redux/cartSlice";
+import { addItem, changeQuantity } from "@/lib/redux/cartSlice";
+import { openCart } from "@/lib/redux/uiSlice";
+import { haptic } from "@/lib/device";
 import type { Product } from "@/lib/types";
 
+/**
+ * Adds a product to the cart.
+ * `feedback="drawer"` slides the mini cart open (product page); `"toast"` stays out of the way for
+ * quick multi-adds from a grid, and offers View cart / Undo.
+ */
 export function AddToCartButton({
   product,
   quantity = 1,
   size = "md",
   fullWidth = false,
   label = "Add to cart",
+  feedback = "drawer",
 }: {
   product: Product;
   quantity?: number;
   size?: "sm" | "md" | "lg";
   fullWidth?: boolean;
   label?: string;
+  feedback?: "drawer" | "toast";
 }) {
   const dispatch = useAppDispatch();
   const router = useRouter();
@@ -40,11 +49,22 @@ export function AddToCartButton({
         quantity,
       })
     );
+    haptic(12);
     setJustAdded(true);
     setTimeout(() => setJustAdded(false), 1400);
-    toast.success(`${product.name} added to cart`, {
-      action: { label: "View cart", onClick: () => router.push("/cart") },
-    });
+
+    if (feedback === "drawer") {
+      dispatch(openCart());
+    } else {
+      toast(`Added ${product.name}`, {
+        // Undo reverses only this add, not any earlier quantity of the same product.
+        action: {
+          label: "Undo",
+          onClick: () => dispatch(changeQuantity({ productId: product.id, delta: -quantity })),
+        },
+        cancel: { label: "View cart", onClick: () => router.push("/cart") },
+      });
+    }
   }
 
   return (

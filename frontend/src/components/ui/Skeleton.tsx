@@ -18,8 +18,8 @@ export function CardRowSkeleton() {
 
 export function ProductCardSkeleton() {
   return (
-    <div className="overflow-hidden rounded-2xl border border-line bg-surface">
-      <Skeleton className="aspect-square w-full rounded-none" />
+    <div className="overflow-hidden rounded-xl border border-line bg-surface">
+      <Skeleton className="aspect-[4/5] w-full rounded-none" />
       <div className="space-y-2.5 p-4">
         <Skeleton className="h-3 w-16" />
         <Skeleton className="h-4 w-3/4" />

@@ -18,6 +18,8 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { ErrorState } from "@/components/ui/ErrorState";
 import { buttonStyles } from "@/components/ui/Button";
 import { ProductImage } from "@/components/product/ProductImage";
+import { BuyAgainButton } from "./BuyAgainButton";
+import { CopyButton } from "./CopyButton";
 import { RequireRole } from "@/components/layout/RequireRole";
 
 const STEPS = [
@@ -73,7 +75,7 @@ function Detail({ id, userId }: { id: string; userId: string }) {
       {justPlaced && (
         <div
           role="status"
-          className="mt-5 flex items-start gap-3 rounded-2xl border border-success/25 bg-success-soft px-4 py-4"
+          className="mt-5 flex items-start gap-3 rounded-xl border border-success/25 bg-success-soft px-4 py-4"
         >
           <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-success" strokeWidth={2} aria-hidden />
           <div>
@@ -86,11 +88,14 @@ function Detail({ id, userId }: { id: string; userId: string }) {
       )}
 
       <div className="mt-5 flex items-center justify-between gap-3">
-        <h1 className="text-2xl font-semibold tracking-tight text-fg">Order #{shortId(id)}</h1>
+        <h1 className="flex items-center gap-1 text-3xl font-medium tracking-tight text-fg">
+          Order #{shortId(id)}
+          <CopyButton value={shortId(id)} label="order number" />
+        </h1>
         {order && <Badge variant={STATUS_VARIANT[order.status] ?? "neutral"}>{order.status}</Badge>}
       </div>
 
-      {loading && !order && <Skeleton className="mt-6 h-72 w-full rounded-2xl" />}
+      {loading && !order && <Skeleton className="mt-6 h-72 w-full rounded-xl" />}
       {error && !order && (
         <div className="mt-6">
           <ErrorState error={error} title="Couldn't load this order" onRetry={() => refetch()} />
@@ -141,6 +146,11 @@ function Detail({ id, userId }: { id: string; userId: string }) {
                 </p>
               )}
             </div>
+            {item && (
+              <div className="mt-4 border-t border-line pt-4">
+                <BuyAgainButton product={item} quantity={order.quantity} />
+              </div>
+            )}
           </Card>
 
           <Card className="p-5 sm:p-6">

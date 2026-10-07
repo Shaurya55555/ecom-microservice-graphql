@@ -27,6 +27,7 @@ import { ErrorState } from "@/components/ui/ErrorState";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Pagination } from "@/components/ui/Pagination";
 import { Button } from "@/components/ui/Button";
+import { Sheet } from "@/components/ui/Sheet";
 import { PageHeader } from "@/components/ui/Card";
 import { controlClass } from "@/components/ui/Field";
 
@@ -167,9 +168,8 @@ export function ProductsBrowser() {
           <Button
             variant="secondary"
             className="lg:hidden"
-            onClick={() => setFiltersOpen((o) => !o)}
-            aria-expanded={filtersOpen}
-            aria-controls="filters-panel"
+            onClick={() => setFiltersOpen(true)}
+            aria-haspopup="dialog"
           >
             <SlidersHorizontal className="h-4 w-4" strokeWidth={2} aria-hidden />
             Filters{activeCount > 0 && ` (${activeCount})`}
@@ -212,14 +212,8 @@ export function ProductsBrowser() {
       )}
 
       <div className="grid gap-8 lg:grid-cols-[220px_1fr]">
-        <aside
-          id="filters-panel"
-          aria-label="Filters"
-          className={cn(
-            "rounded-2xl border border-line bg-surface p-5 lg:sticky lg:top-24 lg:block lg:self-start lg:border-0 lg:bg-transparent lg:p-0",
-            filtersOpen ? "block" : "hidden"
-          )}
-        >
+        {/* Wide screens: a sticky sidebar. Phones get the same controls in a bottom sheet (below). */}
+        <aside aria-label="Filters" className="hidden lg:sticky lg:top-24 lg:block lg:self-start">
           {sidebar}
         </aside>
 
@@ -257,6 +251,21 @@ export function ProductsBrowser() {
           )}
         </div>
       </div>
+
+      <Sheet
+        open={filtersOpen}
+        onClose={() => setFiltersOpen(false)}
+        side="bottom"
+        title="Filters"
+        footer={
+          <Button className="w-full" size="lg" onClick={() => setFiltersOpen(false)}>
+            Show {pluralize(filtered.length, "product")}
+          </Button>
+        }
+      >
+        {/* Mounted only while open so the price inputs never exist twice in the page. */}
+        {filtersOpen && <div className="p-5">{sidebar}</div>}
+      </Sheet>
     </div>
   );
 }

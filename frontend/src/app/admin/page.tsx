@@ -72,14 +72,9 @@ function Dashboard({ session }: { session: Session }) {
 
   return (
     <div className="animate-fade-in">
-      <div className="flex items-center gap-4">
-        <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-amber-500 to-orange-600 shadow-lg shadow-amber-500/25">
-          <ShieldCheck className="h-6 w-6 text-white" strokeWidth={2} aria-hidden />
-        </div>
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight text-fg">Admin dashboard</h1>
-          <p className="text-sm text-muted">{session.username}</p>
-        </div>
+      <div>
+        <h1 className="text-3xl font-medium tracking-tight text-fg sm:text-4xl">Admin dashboard</h1>
+        <p className="mt-1 text-sm text-muted">Signed in as {session.username}</p>
       </div>
 
       <div className="mt-8 grid grid-cols-2 gap-3 lg:grid-cols-4">
@@ -93,9 +88,9 @@ function Dashboard({ session }: { session: Session }) {
         <Card className="mt-3 p-4">
           <p className="text-xs text-subtle">Order outcomes</p>
           <div className="mt-3 flex h-2.5 overflow-hidden rounded-full bg-surface-2" role="img" aria-label={`${byStatus("Accepted")} accepted, ${byStatus("Pending")} pending, ${byStatus("Rejected")} rejected`}>
-            <div className="bg-emerald-500" style={{ width: `${(byStatus("Accepted") / allOrders.length) * 100}%` }} />
-            <div className="bg-amber-500" style={{ width: `${(byStatus("Pending") / allOrders.length) * 100}%` }} />
-            <div className="bg-red-500" style={{ width: `${(byStatus("Rejected") / allOrders.length) * 100}%` }} />
+            <div className="bg-success" style={{ width: `${(byStatus("Accepted") / allOrders.length) * 100}%` }} />
+            <div className="bg-warning" style={{ width: `${(byStatus("Pending") / allOrders.length) * 100}%` }} />
+            <div className="bg-danger" style={{ width: `${(byStatus("Rejected") / allOrders.length) * 100}%` }} />
           </div>
           <div className="mt-3 flex flex-wrap gap-x-5 gap-y-1 text-xs text-muted">
             {(["Accepted", "Pending", "Rejected"] as const).map((s) => (

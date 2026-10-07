@@ -44,7 +44,7 @@ export function ConfirmDialog({
         if (e.target === ref.current) onCancel();
       }}
       aria-labelledby="confirm-title"
-      className="m-auto w-[calc(100%-2rem)] max-w-sm rounded-2xl border border-line bg-surface p-6 text-fg shadow-[var(--shadow-lift)] backdrop:bg-black/50 backdrop:backdrop-blur-sm"
+      className="m-auto w-[calc(100%-2rem)] max-w-sm rounded-xl border border-line bg-surface p-6 text-fg shadow-[var(--shadow-lift)]"
     >
       <h2 id="confirm-title" className="text-base font-semibold">
         {title}
@@ -56,7 +56,7 @@ export function ConfirmDialog({
         </Button>
         <Button
           variant="primary"
-          className="bg-red-600 shadow-red-600/25 hover:bg-red-500"
+          className="bg-danger hover:bg-danger hover:opacity-90"
           onClick={onConfirm}
           loading={loading}
         >

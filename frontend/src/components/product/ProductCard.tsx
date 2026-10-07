@@ -22,33 +22,28 @@ export function ProductCard({ product }: { product: Product }) {
   const canBuy = !session || session.role === "user";
 
   return (
-    <article className="group relative flex flex-col overflow-hidden rounded-2xl border border-line bg-surface shadow-[var(--shadow-card)] transition-all duration-200 hover:-translate-y-0.5 hover:border-brand/40 hover:shadow-[var(--shadow-lift)]">
+    <article className="group relative flex flex-col overflow-hidden rounded-xl border border-line bg-surface transition-colors duration-150 hover:border-line-strong hover:shadow-[var(--shadow-lift)]">
       <div className="relative">
         <ProductImage
           src={product.imageUrl}
           alt={product.name}
           category={product.category}
-          seed={product.id}
-          className="aspect-square w-full"
+          className="aspect-[4/5] w-full"
         />
-        <div className="absolute left-3 top-3 flex gap-1.5">
-          {isNew(product.createdAt) && <Badge variant="indigo">New</Badge>}
-        </div>
-        <WishlistButton
-          productId={product.id}
-          name={product.name}
-          className="absolute right-3 top-3 z-10"
-        />
+        {isNew(product.createdAt) && (
+          <div className="absolute left-3 top-3">
+            <Badge variant="neutral" className="bg-surface text-fg">
+              New
+            </Badge>
+          </div>
+        )}
+        <WishlistButton productId={product.id} name={product.name} className="absolute right-3 top-3 z-10" />
       </div>
 
       <div className="flex flex-1 flex-col p-4">
-        {product.category && (
-          <p className="text-[11px] font-medium uppercase tracking-wider text-subtle">
-            {product.category}
-          </p>
-        )}
-        <h3 className="mt-1 text-sm font-medium text-fg">
-          {/* Stretched link: the whole card is clickable, while the buttons above stay independently focusable. */}
+        {product.category && <p className="text-xs text-subtle">{product.category}</p>}
+        <h3 className="mt-0.5 font-medium leading-snug text-fg">
+          {/* Stretched link: the whole card is clickable, while the buttons stay independently focusable. */}
           <Link
             href={`/products/${product.id}`}
             className="after:absolute after:inset-0 after:content-[''] hover:text-brand-text"
@@ -56,15 +51,13 @@ export function ProductCard({ product }: { product: Product }) {
             {product.name}
           </Link>
         </h3>
-        <p className="mt-1 line-clamp-2 text-xs leading-relaxed text-muted">{product.description}</p>
+        <p className="mt-1 line-clamp-2 text-sm leading-relaxed text-muted">{product.description}</p>
 
         <div className="mt-auto flex items-center justify-between gap-2 pt-4">
-          <span className="text-base font-semibold tabular-nums text-fg">
-            {formatPrice(product.price)}
-          </span>
+          <span className="text-base font-semibold tabular-nums text-fg">{formatPrice(product.price)}</span>
           {canBuy && (
             <div className="relative z-10">
-              <AddToCartButton product={product} size="sm" label="Add" />
+              <AddToCartButton product={product} size="sm" label="Add" feedback="toast" />
             </div>
           )}
         </div>

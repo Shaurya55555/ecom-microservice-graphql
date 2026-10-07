@@ -5,14 +5,12 @@ type Variant = "primary" | "secondary" | "ghost" | "danger" | "success";
 type Size = "sm" | "md" | "lg";
 
 const VARIANTS: Record<Variant, string> = {
-  primary:
-    "bg-brand text-brand-fg shadow-sm shadow-brand/25 hover:bg-brand-hover disabled:hover:bg-brand",
-  secondary:
-    "border border-line-strong bg-surface text-fg hover:bg-surface-2 disabled:hover:bg-surface",
+  primary: "bg-brand text-brand-fg hover:bg-brand-hover",
+  secondary: "border border-line-strong bg-surface text-fg hover:bg-surface-2",
   ghost: "text-muted hover:bg-surface-2 hover:text-fg",
   danger:
     "border border-line-strong bg-surface text-fg hover:border-danger/60 hover:bg-danger-soft hover:text-danger",
-  success: "bg-emerald-600 text-white hover:bg-emerald-500 disabled:hover:bg-emerald-600",
+  success: "bg-success text-brand-fg hover:opacity-90",
 };
 
 const SIZES: Record<Size, string> = {
@@ -32,8 +30,8 @@ export function buttonStyles({
   className?: string;
 } = {}) {
   return cn(
-    "inline-flex shrink-0 items-center justify-center rounded-lg font-medium transition-colors",
-    "disabled:cursor-not-allowed disabled:opacity-60",
+    "inline-flex shrink-0 items-center justify-center rounded-md font-medium transition-colors active:translate-y-px",
+    "disabled:cursor-not-allowed disabled:opacity-60 disabled:active:translate-y-0",
     VARIANTS[variant],
     SIZES[size],
     className

@@ -1,15 +1,17 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useQuery } from "@apollo/client/react";
-import { ChevronRight, PackageSearch, RotateCcw, ShieldCheck, Truck, Zap } from "lucide-react";
+import { ChevronRight, PackageSearch } from "lucide-react";
 import { GET_PRODUCT, GET_PRODUCTS } from "@/lib/graphql/queries";
 import type { Product } from "@/lib/types";
 import { useSession } from "@/lib/useSession";
 import { useAppDispatch } from "@/lib/redux/hooks";
 import { addItem } from "@/lib/redux/cartSlice";
+import { useRecentlyViewed } from "@/lib/recent";
+import { useIsTouch } from "@/lib/device";
 import { formatDate, formatPrice } from "@/lib/utils";
 import { Badge } from "@/components/ui/Badge";
 import { Button, buttonStyles } from "@/components/ui/Button";
@@ -19,6 +21,8 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { ErrorState } from "@/components/ui/ErrorState";
 import { ProductImage } from "./ProductImage";
 import { WishlistButton } from "./WishlistButton";
+import { DoubleTapToSave } from "./DoubleTapToSave";
+import { RecentlyViewed } from "./RecentlyViewed";
 import { AddToCartButton, BuyerOnlyNote } from "./AddToCartButton";
 import { ProductGrid } from "./ProductGrid";
 
@@ -36,11 +40,11 @@ export function ProductDetail({ id, initial }: { id: string; initial: Product | 
     return (
       <EmptyState
         icon={PackageSearch}
-        title="Product not found"
-        description="It may have been removed by the seller."
+        title="We couldn't find that product"
+        description="The seller may have taken it down."
         action={
           <Link href="/products" className={buttonStyles({ variant: "secondary" })}>
-            Back to shop
+            Back to the shop
           </Link>
         }
       />
@@ -53,9 +57,25 @@ function DetailView({ product }: { product: Product }) {
   const router = useRouter();
   const dispatch = useAppDispatch();
   const { session, ready } = useSession();
+  const { record } = useRecentlyViewed();
+  const touch = useIsTouch();
   const [quantity, setQuantity] = useState(1);
+  const [ctaVisible, setCtaVisible] = useState(true);
+  const ctaRef = useRef<HTMLDivElement>(null);
   const canBuy = !session || session.role === "user";
   const category = product.category || "General";
+
+  // Remember this product for the "recently viewed" rows.
+  useEffect(() => record(product.id), [record, product.id]);
+
+  // Show the sticky bottom bar only once the real button has scrolled out of view.
+  useEffect(() => {
+    const el = ctaRef.current;
+    if (!el || typeof IntersectionObserver === "undefined") return;
+    const io = new IntersectionObserver(([entry]) => setCtaVisible(entry.isIntersecting));
+    io.observe(el);
+    return () => io.disconnect();
+  }, [ready, canBuy]);
 
   function buyNow() {
     dispatch(
@@ -71,8 +91,10 @@ function DetailView({ product }: { product: Product }) {
     router.push("/checkout");
   }
 
+  const showBar = ready && canBuy && !ctaVisible;
+
   return (
-    <div className="animate-fade-in">
+    <div className={showBar ? "animate-fade-in pb-24 md:pb-0" : "animate-fade-in"}>
       <nav aria-label="Breadcrumb" className="mb-6 flex flex-wrap items-center gap-1.5 text-xs text-subtle">
         <Link href="/" className="hover:text-fg">
           Home
@@ -92,45 +114,52 @@ function DetailView({ product }: { product: Product }) {
       </nav>
 
       <div className="grid gap-8 lg:grid-cols-2 lg:gap-14">
-        <div className="relative">
-          <ProductImage
-            src={product.imageUrl}
-            alt={product.name}
-            category={product.category}
-            seed={product.id}
-            priority
-            className="aspect-square w-full rounded-3xl border border-line"
-          />
+        <div>
+          <DoubleTapToSave productId={product.id} name={product.name}>
+            <ProductImage
+              src={product.imageUrl}
+              alt={product.name}
+              category={product.category}
+              priority
+              className="aspect-square w-full rounded-xl border border-line"
+            />
+          </DoubleTapToSave>
+          {canBuy && (
+            <p className="mt-2 text-xs text-subtle">
+              {touch ? "Double-tap the photo to save it." : "Double-click the photo to save it."}
+            </p>
+          )}
         </div>
 
         <div className="flex flex-col">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3 text-sm">
             <Link href={`/products?category=${encodeURIComponent(category)}`}>
               <Badge variant="indigo">{category}</Badge>
             </Link>
-            {product.createdAt && (
-              <span className="text-xs text-subtle">Listed {formatDate(product.createdAt)}</span>
-            )}
+            {product.createdAt && <span className="text-xs text-subtle">Listed {formatDate(product.createdAt)}</span>}
           </div>
 
-          <h1 className="mt-4 text-3xl font-semibold tracking-tight text-fg sm:text-4xl">{product.name}</h1>
+          <h1 className="mt-4 text-4xl font-medium leading-tight tracking-tight text-fg sm:text-5xl">{product.name}</h1>
           <p className="mt-4 text-3xl font-semibold tabular-nums text-fg">{formatPrice(product.price)}</p>
           <p className="mt-5 whitespace-pre-line text-base leading-relaxed text-muted">{product.description}</p>
 
-          <div className="mt-8 border-t border-line pt-8">
+          <div ref={ctaRef} className="mt-8 border-t border-line pt-8">
             {!ready ? (
               <Skeleton className="h-12 w-full" />
             ) : canBuy ? (
               <div className="space-y-3">
                 <div className="flex flex-wrap items-center gap-3">
-                  <QuantityStepper value={quantity} onChange={(n) => setQuantity(Math.max(1, n))} label={`${product.name} quantity`} />
+                  <QuantityStepper
+                    value={quantity}
+                    onChange={(n) => setQuantity(Math.max(1, n))}
+                    label={`${product.name} quantity`}
+                  />
                   <div className="min-w-40 flex-1">
                     <AddToCartButton product={product} quantity={quantity} size="lg" fullWidth />
                   </div>
                   <WishlistButton productId={product.id} name={product.name} className="h-12 w-12" />
                 </div>
                 <Button variant="secondary" size="lg" className="w-full" onClick={buyNow}>
-                  <Zap className="h-4 w-4" strokeWidth={2} aria-hidden />
                   Buy now
                 </Button>
               </div>
@@ -139,25 +168,28 @@ function DetailView({ product }: { product: Product }) {
             )}
           </div>
 
-          <ul className="mt-8 grid gap-3 text-sm text-muted sm:grid-cols-3">
-            {[
-              [Truck, "Free shipping"],
-              [ShieldCheck, "Secure checkout"],
-              [RotateCcw, "Seller-fulfilled"],
-            ].map(([Icon, text]) => {
-              const I = Icon as typeof Truck;
-              return (
-                <li key={text as string} className="flex items-center gap-2 rounded-xl border border-line bg-surface px-3 py-2.5">
-                  <I className="h-4 w-4 text-brand-text" strokeWidth={1.75} aria-hidden />
-                  {text as string}
-                </li>
-              );
-            })}
+          <ul className="mt-8 space-y-2 text-sm text-muted">
+            <li>Free shipping on every order.</li>
+            <li>The seller confirms each order before it goes ahead.</li>
+            <li>No payment is taken on this demo store.</li>
           </ul>
         </div>
       </div>
 
-      <Related product={product} />
+      <div className="mt-16 space-y-16">
+        <Related product={product} />
+        <RecentlyViewed excludeId={product.id} />
+      </div>
+
+      {showBar && (
+        <div className="fixed inset-x-0 bottom-0 z-30 flex items-center gap-3 border-t border-line-strong bg-surface px-4 py-3 md:hidden">
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-sm font-medium text-fg">{product.name}</p>
+            <p className="text-sm tabular-nums text-muted">{formatPrice(product.price * quantity)}</p>
+          </div>
+          <AddToCartButton product={product} quantity={quantity} size="md" label="Add to cart" />
+        </div>
+      )}
     </div>
   );
 }
@@ -174,8 +206,8 @@ function Related({ product }: { product: Product }) {
 
   if (related.length === 0) return null;
   return (
-    <section aria-labelledby="related-heading" className="mt-20">
-      <h2 id="related-heading" className="mb-6 text-xl font-semibold tracking-tight text-fg">
+    <section aria-labelledby="related-heading">
+      <h2 id="related-heading" className="mb-5 font-serif text-2xl font-medium text-fg">
         You might also like
       </h2>
       <ProductGrid products={related} />
@@ -186,7 +218,7 @@ function Related({ product }: { product: Product }) {
 function DetailSkeleton() {
   return (
     <div className="grid gap-8 lg:grid-cols-2 lg:gap-14" role="status" aria-label="Loading product">
-      <Skeleton className="aspect-square w-full rounded-3xl" />
+      <Skeleton className="aspect-square w-full rounded-xl" />
       <div className="space-y-4">
         <Skeleton className="h-5 w-24" />
         <Skeleton className="h-10 w-3/4" />

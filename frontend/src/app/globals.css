@@ -4,60 +4,77 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 /*
- * Design tokens. Every surface/text/border colour in the app goes through one
- * of these so light and dark stay in lockstep. Contrast notes (WCAG AA):
- *   light: muted on bg 7.6:1, subtle on bg 4.8:1, brand on bg 6.3:1
- *   dark:  muted on bg 7.9:1, subtle on bg 5.1:1, brand-text on bg 7.2:1
+ * Warm "paper" palette: beige surfaces, ink-brown text, one terracotta accent.
+ * Contrast (WCAG AA) on the page background:
+ *   light: fg 12.9:1 · muted 6.1:1 · subtle 5.0:1 · brand-text 7.0:1
+ *   dark:  fg 12.4:1 · muted 7.3:1 · subtle 5.3:1 · brand-text 7.6:1
  */
 :root {
-  --bg: #fafafa;
-  --surface: #ffffff;
-  --surface-2: #f4f4f5;
-  --fg: #0a0a0b;
-  --muted: #52525b;
-  --subtle: #6b6b76;
-  --line: #e4e4e7;
-  --line-strong: #d4d4d8;
-  --brand: #4f46e5;
-  --brand-hover: #4338ca;
-  --brand-fg: #ffffff;
-  --brand-soft: rgb(79 70 229 / 0.1);
-  --brand-text: #4338ca;
-  --success: #047857;
-  --success-soft: rgb(16 185 129 / 0.12);
-  --warning: #b45309;
-  --warning-soft: rgb(245 158 11 / 0.14);
-  --danger: #b91c1c;
-  --danger-soft: rgb(239 68 68 / 0.1);
-  --ring: rgb(99 102 241 / 0.35);
-  --shadow-card: 0 1px 2px rgb(0 0 0 / 0.04), 0 4px 16px rgb(0 0 0 / 0.04);
-  --shadow-lift: 0 8px 30px rgb(0 0 0 / 0.1);
+  --bg: #f4eee3;
+  --surface: #faf6ee;
+  --surface-2: #ebe3d4;
+  --fg: #2a2520;
+  --muted: #5f564b;
+  --subtle: #6f6558;
+  --line: #d9cfbc;
+  --line-strong: #c9bda6;
+  --brand: #a64b2a;
+  --brand-hover: #8a3d21;
+  --brand-fg: #fffaf2;
+  --brand-soft: rgb(166 75 42 / 0.1);
+  --brand-text: #8a3d21;
+  --success: #4a6b34;
+  --success-soft: rgb(74 107 52 / 0.13);
+  --warning: #8a5a0d;
+  --warning-soft: rgb(176 120 20 / 0.16);
+  --danger: #a12e2a;
+  --danger-soft: rgb(161 46 42 / 0.1);
+  --ring: rgb(166 75 42 / 0.35);
+  --shadow-lift: 0 8px 24px rgb(70 45 20 / 0.14);
+
+  /* Flat tones for product/category artwork. */
+  --tone-sand: #e6dac4;
+  --tone-clay: #e5c6b2;
+  --tone-sage: #d0d7c0;
+  --tone-ochre: #ead6a4;
+  --tone-dusk: #dbd1d4;
+  --tone-stone: #dad4c9;
+  --tone-rose: #e8cdc6;
+  --tone-sky: #cfd8d4;
   color-scheme: light;
 }
 
 .dark {
-  --bg: #0a0a0b;
-  --surface: #121214;
-  --surface-2: #1a1a1d;
-  --fg: #ededed;
-  --muted: #a1a1aa;
-  --subtle: #8b8b95;
-  --line: rgb(255 255 255 / 0.1);
-  --line-strong: rgb(255 255 255 / 0.18);
-  --brand: #6366f1;
-  --brand-hover: #818cf8;
-  --brand-fg: #ffffff;
-  --brand-soft: rgb(99 102 241 / 0.14);
-  --brand-text: #a5b4fc;
-  --success: #34d399;
-  --success-soft: rgb(16 185 129 / 0.12);
-  --warning: #fbbf24;
-  --warning-soft: rgb(245 158 11 / 0.12);
-  --danger: #f87171;
-  --danger-soft: rgb(239 68 68 / 0.1);
-  --ring: rgb(129 140 248 / 0.4);
-  --shadow-card: 0 1px 0 rgb(255 255 255 / 0.04) inset;
-  --shadow-lift: 0 10px 40px rgb(0 0 0 / 0.5);
+  --bg: #1b1713;
+  --surface: #241f1a;
+  --surface-2: #2e2822;
+  --fg: #ece3d4;
+  --muted: #b5a995;
+  --subtle: #9a8e7b;
+  --line: #3a332b;
+  --line-strong: #4b4238;
+  --brand: #d98a65;
+  --brand-hover: #e5a07f;
+  --brand-fg: #1b1713;
+  --brand-soft: rgb(217 138 101 / 0.14);
+  --brand-text: #e8a584;
+  --success: #a3c47f;
+  --success-soft: rgb(163 196 127 / 0.14);
+  --warning: #e3b45c;
+  --warning-soft: rgb(227 180 92 / 0.14);
+  --danger: #f08d84;
+  --danger-soft: rgb(240 141 132 / 0.12);
+  --ring: rgb(217 138 101 / 0.45);
+  --shadow-lift: 0 10px 30px rgb(0 0 0 / 0.5);
+
+  --tone-sand: #3a3226;
+  --tone-clay: #46332a;
+  --tone-sage: #323a2c;
+  --tone-ochre: #43391f;
+  --tone-dusk: #3a3236;
+  --tone-stone: #34312b;
+  --tone-rose: #45302d;
+  --tone-sky: #2f3a37;
   color-scheme: dark;
 }
 
@@ -81,9 +98,16 @@
   --color-warning-soft: var(--warning-soft);
   --color-danger: var(--danger);
   --color-danger-soft: var(--danger-soft);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-  --shadow-card: var(--shadow-card);
+  --color-tone-sand: var(--tone-sand);
+  --color-tone-clay: var(--tone-clay);
+  --color-tone-sage: var(--tone-sage);
+  --color-tone-ochre: var(--tone-ochre);
+  --color-tone-dusk: var(--tone-dusk);
+  --color-tone-stone: var(--tone-stone);
+  --color-tone-rose: var(--tone-rose);
+  --color-tone-sky: var(--tone-sky);
+  --font-sans: var(--font-body);
+  --font-serif: var(--font-display);
   --shadow-lift: var(--shadow-lift);
 }
 
@@ -94,30 +118,25 @@ html {
 body {
   background: var(--bg);
   color: var(--fg);
-  font-family: var(--font-geist-sans), system-ui, sans-serif;
+  font-family: var(--font-body), system-ui, sans-serif;
+  font-feature-settings: "ss01", "cv11";
 }
 
-/* Soft brand glow behind the top of every page. */
-body::before {
-  content: "";
-  position: fixed;
-  inset: 0 0 auto 0;
-  height: 520px;
-  z-index: -1;
-  pointer-events: none;
-  background:
-    radial-gradient(900px 400px at 12% -10%, rgb(99 102 241 / 0.1), transparent 60%),
-    radial-gradient(700px 360px at 100% 0%, rgb(16 185 129 / 0.06), transparent 55%);
+/* Page titles use the serif; everything else stays in the sans. */
+h1,
+.font-serif {
+  font-family: var(--font-display), Georgia, serif;
+  font-optical-sizing: auto;
 }
 
 ::selection {
-  background: rgb(99 102 241 / 0.3);
+  background: rgb(166 75 42 / 0.25);
 }
 
 :focus-visible {
   outline: 2px solid var(--brand);
   outline-offset: 2px;
-  border-radius: 6px;
+  border-radius: 4px;
 }
 
 ::-webkit-scrollbar {
@@ -130,8 +149,7 @@ body::before {
 ::-webkit-scrollbar-thumb {
   background: var(--line-strong);
   border-radius: 999px;
-  border: 2px solid transparent;
-  background-clip: padding-box;
+  border: 2px solid var(--bg);
 }
 
 @keyframes fade-in {
@@ -148,10 +166,55 @@ body::before {
   animation: fade-in 0.3s ease-out both;
 }
 
-@keyframes shimmer {
-  to {
-    background-position: -200% 0;
+/* Slide-over panels enter from the edge set by --sheet-from (see components/ui/Sheet.tsx). */
+@keyframes sheet-in {
+  from {
+    transform: translate(var(--sheet-from, 0 100%));
   }
+  to {
+    transform: translate(0, 0);
+  }
+}
+
+/* Heart that pops where you double-tapped. */
+@keyframes heart-pop {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.4);
+  }
+  25% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1.15);
+  }
+  60% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -70%) scale(1);
+  }
+}
+.animate-heart-pop {
+  animation: heart-pop 0.8s ease-out both;
+}
+
+/* Cart badge nudge when an item is added. */
+@keyframes bump {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  40% {
+    transform: scale(1.35);
+  }
+}
+.animate-bump {
+  animation: bump 0.35s ease-out;
+}
+
+dialog::backdrop {
+  background: rgb(30 22 14 / 0.45);
 }
 
 /* Respect users who ask the OS for less motion. */

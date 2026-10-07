@@ -1,6 +1,7 @@
 import { configureStore } from "@reduxjs/toolkit";
 import cartReducer, { type CartItem } from "./cartSlice";
 import wishlistReducer from "./wishlistSlice";
+import uiReducer from "./uiSlice";
 
 export const CART_KEY = "ecom_cart";
 export const WISHLIST_KEY = "ecom_wishlist";
@@ -39,7 +40,7 @@ export function sanitizeCart(raw: unknown): CartItem[] {
 
 export function makeStore() {
   return configureStore({
-    reducer: { cart: cartReducer, wishlist: wishlistReducer },
+    reducer: { cart: cartReducer, wishlist: wishlistReducer, ui: uiReducer },
   });
 }
 

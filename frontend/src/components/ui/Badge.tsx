@@ -1,15 +1,16 @@
 import { cn } from "@/lib/utils";
 
 const VARIANTS = {
-  amber: "bg-warning-soft text-warning ring-warning/25",
-  emerald: "bg-success-soft text-success ring-success/25",
-  red: "bg-danger-soft text-danger ring-danger/25",
-  indigo: "bg-brand-soft text-brand-text ring-brand/25",
-  neutral: "bg-surface-2 text-muted ring-line",
+  amber: "bg-warning-soft text-warning",
+  emerald: "bg-success-soft text-success",
+  red: "bg-danger-soft text-danger",
+  indigo: "bg-brand-soft text-brand-text",
+  neutral: "bg-surface-2 text-muted",
 } as const;
 
 export type BadgeVariant = keyof typeof VARIANTS;
 
+/** A quiet label rather than a glowing pill. */
 export function Badge({
   children,
   variant = "neutral",
@@ -22,7 +23,7 @@ export function Badge({
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium ring-1 ring-inset",
+        "inline-flex items-center gap-1 rounded-sm px-2 py-0.5 text-xs font-medium",
         VARIANTS[variant],
         className
       )}

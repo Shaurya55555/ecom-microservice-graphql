@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import reducer, {
   MAX_QTY,
   addItem,
+  changeQuantity,
   clearCart,
   hydrateCart,
   removeItem,
@@ -52,6 +53,15 @@ describe("cartSlice", () => {
   it("ignores setQuantity for unknown products", () => {
     const s = reducer(empty, setQuantity({ productId: "nope", quantity: 3 }));
     expect(s.items).toEqual([]);
+  });
+
+  it("changeQuantity adjusts by a signed amount and drops the line at zero (undo-add)", () => {
+    let s = reducer(empty, addItem({ ...mouse, quantity: 3 }));
+    s = reducer(s, changeQuantity({ productId: "p1", delta: -2 }));
+    expect(s.items[0].quantity).toBe(1);
+    s = reducer(s, changeQuantity({ productId: "p1", delta: -1 }));
+    expect(s.items).toEqual([]);
+    expect(reducer(s, changeQuantity({ productId: "ghost", delta: -1 })).items).toEqual([]);
   });
 
   it("removes and clears", () => {

@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useMutation, useQuery } from "@apollo/client/react";
-import { Check, DollarSign, Inbox, Package, Pencil, Store, Trash2, X } from "lucide-react";
+import { Check, DollarSign, Inbox, Package, Pencil, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
 import { DELETE_PRODUCT, RESPOND_TO_ORDER } from "@/lib/graphql/mutations";
 import { GET_PRODUCTS, GET_SELLER_ORDERS } from "@/lib/graphql/queries";
@@ -81,14 +81,9 @@ function Dashboard({ session }: { session: Session }) {
 
   return (
     <div className="animate-fade-in">
-      <div className="flex items-center gap-4">
-        <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 shadow-lg shadow-emerald-500/25">
-          <Store className="h-6 w-6 text-white" strokeWidth={2} aria-hidden />
-        </div>
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight text-fg">Seller dashboard</h1>
-          <p className="text-sm text-muted">{session.username}</p>
-        </div>
+      <div>
+        <h1 className="text-3xl font-medium tracking-tight text-fg sm:text-4xl">Seller dashboard</h1>
+        <p className="mt-1 text-sm text-muted">Signed in as {session.username}</p>
       </div>
 
       <div className="mt-8 grid grid-cols-1 gap-3 sm:grid-cols-3">

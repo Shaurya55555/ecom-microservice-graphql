@@ -24,9 +24,9 @@ export function NewArrivals() {
 
   return (
     <section aria-labelledby="arrivals-heading">
-      <div className="mb-6 flex items-end justify-between">
-        <h2 id="arrivals-heading" className="text-xl font-semibold tracking-tight text-fg">
-          New arrivals
+      <div className="mb-5 flex items-end justify-between">
+        <h2 id="arrivals-heading" className="font-serif text-2xl font-medium text-fg">
+          Just listed
         </h2>
         <Link href="/products?sort=newest" className="text-sm font-medium text-brand-text hover:underline">
           See more
@@ -38,8 +38,8 @@ export function NewArrivals() {
       {!loading && !error && latest.length === 0 && (
         <EmptyState
           icon={PackageX}
-          title="No products yet"
-          description="Sellers haven't listed anything yet — check back soon."
+          title="Nothing listed yet"
+          description="Sellers haven't added anything yet. Check back soon."
         />
       )}
       {!loading && !error && latest.length > 0 && <ProductGrid products={latest} />}

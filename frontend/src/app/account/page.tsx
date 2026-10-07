@@ -14,6 +14,7 @@ import { ErrorState } from "@/components/ui/ErrorState";
 import { Badge, STATUS_VARIANT } from "@/components/ui/Badge";
 import { buttonStyles } from "@/components/ui/Button";
 import { ProductImage } from "@/components/product/ProductImage";
+import { BuyAgainButton } from "@/components/orders/BuyAgainButton";
 import { useAppSelector } from "@/lib/redux/hooks";
 import { selectCartCount } from "@/lib/redux/cartSlice";
 import { formatPrice, shortId } from "@/lib/utils";
@@ -52,11 +53,11 @@ function Account({ session }: { session: Session }) {
   return (
     <div className="animate-fade-in">
       <div className="flex items-center gap-4">
-        <div className="flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-indigo-500 to-violet-600 text-lg font-semibold text-white shadow-lg shadow-indigo-500/25">
+        <div className="flex h-14 w-14 items-center justify-center rounded-full bg-brand-soft font-serif text-xl text-brand-text">
           {session.username.slice(0, 2).toUpperCase()}
         </div>
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight text-fg">{session.username}</h1>
+          <h1 className="text-3xl font-medium tracking-tight text-fg">{session.username}</h1>
           <p className="text-sm text-muted">{session.email}</p>
         </div>
       </div>
@@ -66,12 +67,12 @@ function Account({ session }: { session: Session }) {
         <Stat label="Accepted orders" value={orders.loading ? "—" : accepted} />
         <Stat label="Accepted value" value={orders.loading || products.loading ? "—" : formatPrice(spent)} />
         <div className="grid grid-cols-2 gap-3">
-          <Link href="/wishlist" className="rounded-2xl border border-line bg-surface p-4 transition-colors hover:border-brand/40">
-            <Heart className="h-4 w-4 text-rose-500" strokeWidth={2} aria-hidden />
+          <Link href="/wishlist" className="rounded-xl border border-line bg-surface p-4 transition-colors hover:border-brand/40">
+            <Heart className="h-4 w-4 text-brand" strokeWidth={2} aria-hidden />
             <p className="mt-2 text-lg font-semibold tabular-nums text-fg">{wishCount}</p>
             <p className="text-xs text-subtle">Wishlist</p>
           </Link>
-          <Link href="/cart" className="rounded-2xl border border-line bg-surface p-4 transition-colors hover:border-brand/40">
+          <Link href="/cart" className="rounded-xl border border-line bg-surface p-4 transition-colors hover:border-brand/40">
             <ShoppingCart className="h-4 w-4 text-brand-text" strokeWidth={2} aria-hidden />
             <p className="mt-2 text-lg font-semibold tabular-nums text-fg">{cartCount}</p>
             <p className="text-xs text-subtle">In cart</p>
@@ -112,30 +113,35 @@ function Account({ session }: { session: Session }) {
             {mine.map((order) => {
               const product = productById.get(order.productId);
               return (
-                <Link
+                <div
                   key={order.id}
-                  href={`/orders/${order.id}`}
-                  className="flex items-center gap-4 px-4 py-4 transition-colors first:rounded-t-2xl last:rounded-b-2xl hover:bg-surface-2/60 sm:px-5"
+                  className="flex items-center gap-3 px-4 py-4 transition-colors first:rounded-t-xl last:rounded-b-xl hover:bg-surface-2/60 sm:px-5"
                 >
-                  <ProductImage
-                    src={product?.imageUrl}
-                    alt=""
-                    category={product?.category}
-                    seed={order.productId}
-                    className="h-14 w-14 shrink-0 rounded-lg border border-line"
-                  />
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-medium text-fg">
-                      {product?.name ?? "Product no longer available"}
-                    </p>
-                    <p className="mt-0.5 text-xs text-subtle">
-                      Order #{shortId(order.id)} · Qty {order.quantity}
-                      {product && ` · ${formatPrice(product.price * order.quantity)}`}
-                    </p>
-                  </div>
-                  <Badge variant={STATUS_VARIANT[order.status] ?? "neutral"}>{order.status}</Badge>
-                  <ChevronRight className="hidden h-4 w-4 text-subtle sm:block" strokeWidth={2} aria-hidden />
-                </Link>
+                  <Link href={`/orders/${order.id}`} className="flex min-w-0 flex-1 items-center gap-4">
+                    <ProductImage
+                      src={product?.imageUrl}
+                      alt=""
+                      category={product?.category}
+                      className="h-14 w-14 shrink-0 rounded-md border border-line"
+                    />
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-medium text-fg">
+                        {product?.name ?? "Product no longer available"}
+                      </p>
+                      <p className="mt-0.5 text-xs text-subtle">
+                        Order #{shortId(order.id)} · Qty {order.quantity}
+                        {product && ` · ${formatPrice(product.price * order.quantity)}`}
+                      </p>
+                    </div>
+                    <Badge variant={STATUS_VARIANT[order.status] ?? "neutral"}>{order.status}</Badge>
+                    <ChevronRight className="hidden h-4 w-4 text-subtle sm:block" strokeWidth={2} aria-hidden />
+                  </Link>
+                  {product && (
+                    <div className="hidden sm:block">
+                      <BuyAgainButton product={product} quantity={order.quantity} />
+                    </div>
+                  )}
+                </div>
               );
             })}
           </Card>
