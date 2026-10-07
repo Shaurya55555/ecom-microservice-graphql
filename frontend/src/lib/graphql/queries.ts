@@ -1,36 +1,48 @@
 import { gql } from "@apollo/client";
 
+export const PRODUCT_FIELDS = gql`
+  fragment ProductFields on Product {
+    id
+    name
+    description
+    price
+    sellerId
+    category
+    imageUrl
+    createdAt
+  }
+`;
+
 export const GET_PRODUCTS = gql`
+  ${PRODUCT_FIELDS}
   query GetProducts {
     getProducts {
-      id
-      name
-      description
-      price
-      sellerId
+      ...ProductFields
     }
   }
 `;
 
 export const GET_PRODUCT = gql`
+  ${PRODUCT_FIELDS}
   query GetProduct($id: ID!) {
     getProduct(id: $id) {
-      id
-      name
-      description
-      price
+      ...ProductFields
     }
   }
+`;
+
+const ORDER_FIELDS = `
+  id
+  productId
+  userId
+  quantity
+  status
 `;
 
 export const GET_ORDERS = gql`
   query GetOrders {
     getOrders {
-      id
-      productId
-      userId
-      quantity
-      status
+      ${ORDER_FIELDS}
     }
   }
 `;
@@ -38,11 +50,7 @@ export const GET_ORDERS = gql`
 export const GET_ORDER = gql`
   query GetOrder($id: ID!) {
     getOrder(id: $id) {
-      id
-      productId
-      userId
-      quantity
-      status
+      ${ORDER_FIELDS}
     }
   }
 `;
@@ -50,11 +58,7 @@ export const GET_ORDER = gql`
 export const GET_SELLER_ORDERS = gql`
   query GetSellerOrders {
     getSellerOrders {
-      id
-      productId
-      userId
-      quantity
-      status
+      ${ORDER_FIELDS}
     }
   }
 `;

@@ -1,34 +1,44 @@
+import { cn } from "@/lib/utils";
+
 const VARIANTS = {
-  amber: "bg-amber-500/10 text-amber-400 ring-amber-500/25",
-  emerald: "bg-emerald-500/10 text-emerald-400 ring-emerald-500/25",
-  red: "bg-red-500/10 text-red-400 ring-red-500/25",
-  indigo: "bg-indigo-500/10 text-indigo-300 ring-indigo-500/25",
-  neutral: "bg-white/5 text-neutral-400 ring-white/10",
+  amber: "bg-warning-soft text-warning ring-warning/25",
+  emerald: "bg-success-soft text-success ring-success/25",
+  red: "bg-danger-soft text-danger ring-danger/25",
+  indigo: "bg-brand-soft text-brand-text ring-brand/25",
+  neutral: "bg-surface-2 text-muted ring-line",
 } as const;
+
+export type BadgeVariant = keyof typeof VARIANTS;
 
 export function Badge({
   children,
   variant = "neutral",
+  className,
 }: {
   children: React.ReactNode;
-  variant?: keyof typeof VARIANTS;
+  variant?: BadgeVariant;
+  className?: string;
 }) {
   return (
     <span
-      className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium ring-1 ring-inset ${VARIANTS[variant]}`}
+      className={cn(
+        "inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium ring-1 ring-inset",
+        VARIANTS[variant],
+        className
+      )}
     >
       {children}
     </span>
   );
 }
 
-export const STATUS_VARIANT: Record<string, keyof typeof VARIANTS> = {
+export const STATUS_VARIANT: Record<string, BadgeVariant> = {
   Pending: "amber",
   Accepted: "emerald",
   Rejected: "red",
 };
 
-export const ROLE_VARIANT: Record<string, keyof typeof VARIANTS> = {
+export const ROLE_VARIANT: Record<string, BadgeVariant> = {
   user: "indigo",
   seller: "emerald",
   admin: "amber",

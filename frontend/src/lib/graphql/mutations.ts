@@ -1,4 +1,5 @@
 import { gql } from "@apollo/client";
+import { PRODUCT_FIELDS } from "./queries";
 
 export const REGISTER = gql`
   mutation Register($username: String!, $email: String!, $password: String!, $role: String) {
@@ -22,12 +23,53 @@ export const LOGIN = gql`
 `;
 
 export const CREATE_PRODUCT = gql`
-  mutation CreateProduct($name: String!, $description: String!, $price: Float!) {
-    createProduct(name: $name, description: $description, price: $price) {
+  ${PRODUCT_FIELDS}
+  mutation CreateProduct(
+    $name: String!
+    $description: String!
+    $price: Float!
+    $category: String
+    $imageUrl: String
+  ) {
+    createProduct(
+      name: $name
+      description: $description
+      price: $price
+      category: $category
+      imageUrl: $imageUrl
+    ) {
+      ...ProductFields
+    }
+  }
+`;
+
+export const UPDATE_PRODUCT = gql`
+  ${PRODUCT_FIELDS}
+  mutation UpdateProduct(
+    $id: ID!
+    $name: String
+    $description: String
+    $price: Float
+    $category: String
+    $imageUrl: String
+  ) {
+    updateProduct(
+      id: $id
+      name: $name
+      description: $description
+      price: $price
+      category: $category
+      imageUrl: $imageUrl
+    ) {
+      ...ProductFields
+    }
+  }
+`;
+
+export const DELETE_PRODUCT = gql`
+  mutation DeleteProduct($id: ID!) {
+    deleteProduct(id: $id) {
       id
-      name
-      description
-      price
     }
   }
 `;

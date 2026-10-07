@@ -1,28 +1,123 @@
 @import "tailwindcss";
 
+/* Class-based dark mode, driven by next-themes (attribute="class"). */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/*
+ * Design tokens. Every surface/text/border colour in the app goes through one
+ * of these so light and dark stay in lockstep. Contrast notes (WCAG AA):
+ *   light: muted on bg 7.6:1, subtle on bg 4.8:1, brand on bg 6.3:1
+ *   dark:  muted on bg 7.9:1, subtle on bg 5.1:1, brand-text on bg 7.2:1
+ */
 :root {
-  --background: #0a0a0b;
-  --foreground: #ededed;
+  --bg: #fafafa;
+  --surface: #ffffff;
+  --surface-2: #f4f4f5;
+  --fg: #0a0a0b;
+  --muted: #52525b;
+  --subtle: #6b6b76;
+  --line: #e4e4e7;
+  --line-strong: #d4d4d8;
+  --brand: #4f46e5;
+  --brand-hover: #4338ca;
+  --brand-fg: #ffffff;
+  --brand-soft: rgb(79 70 229 / 0.1);
+  --brand-text: #4338ca;
+  --success: #047857;
+  --success-soft: rgb(16 185 129 / 0.12);
+  --warning: #b45309;
+  --warning-soft: rgb(245 158 11 / 0.14);
+  --danger: #b91c1c;
+  --danger-soft: rgb(239 68 68 / 0.1);
+  --ring: rgb(99 102 241 / 0.35);
+  --shadow-card: 0 1px 2px rgb(0 0 0 / 0.04), 0 4px 16px rgb(0 0 0 / 0.04);
+  --shadow-lift: 0 8px 30px rgb(0 0 0 / 0.1);
+  color-scheme: light;
+}
+
+.dark {
+  --bg: #0a0a0b;
+  --surface: #121214;
+  --surface-2: #1a1a1d;
+  --fg: #ededed;
+  --muted: #a1a1aa;
+  --subtle: #8b8b95;
+  --line: rgb(255 255 255 / 0.1);
+  --line-strong: rgb(255 255 255 / 0.18);
+  --brand: #6366f1;
+  --brand-hover: #818cf8;
+  --brand-fg: #ffffff;
+  --brand-soft: rgb(99 102 241 / 0.14);
+  --brand-text: #a5b4fc;
+  --success: #34d399;
+  --success-soft: rgb(16 185 129 / 0.12);
+  --warning: #fbbf24;
+  --warning-soft: rgb(245 158 11 / 0.12);
+  --danger: #f87171;
+  --danger-soft: rgb(239 68 68 / 0.1);
+  --ring: rgb(129 140 248 / 0.4);
+  --shadow-card: 0 1px 0 rgb(255 255 255 / 0.04) inset;
+  --shadow-lift: 0 10px 40px rgb(0 0 0 / 0.5);
+  color-scheme: dark;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-fg: var(--fg);
+  --color-muted: var(--muted);
+  --color-subtle: var(--subtle);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-brand: var(--brand);
+  --color-brand-hover: var(--brand-hover);
+  --color-brand-fg: var(--brand-fg);
+  --color-brand-soft: var(--brand-soft);
+  --color-brand-text: var(--brand-text);
+  --color-success: var(--success);
+  --color-success-soft: var(--success-soft);
+  --color-warning: var(--warning);
+  --color-warning-soft: var(--warning-soft);
+  --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+  --shadow-card: var(--shadow-card);
+  --shadow-lift: var(--shadow-lift);
+}
+
+html {
+  scroll-behavior: smooth;
 }
 
 body {
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-geist-sans), system-ui, sans-serif;
+}
+
+/* Soft brand glow behind the top of every page. */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0 0 auto 0;
+  height: 520px;
+  z-index: -1;
+  pointer-events: none;
   background:
-    radial-gradient(1200px 600px at 15% -10%, rgba(99, 102, 241, 0.08), transparent 60%),
-    radial-gradient(900px 500px at 100% 0%, rgba(16, 185, 129, 0.05), transparent 55%),
-    var(--background);
-  color: var(--foreground);
+    radial-gradient(900px 400px at 12% -10%, rgb(99 102 241 / 0.1), transparent 60%),
+    radial-gradient(700px 360px at 100% 0%, rgb(16 185 129 / 0.06), transparent 55%);
 }
 
 ::selection {
-  background: rgba(99, 102, 241, 0.35);
-  color: #fff;
+  background: rgb(99 102 241 / 0.3);
+}
+
+:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+  border-radius: 6px;
 }
 
 ::-webkit-scrollbar {
@@ -33,20 +128,16 @@ body {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.12);
+  background: var(--line-strong);
   border-radius: 999px;
   border: 2px solid transparent;
-  background-clip: padding-box;
-}
-::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.2);
   background-clip: padding-box;
 }
 
 @keyframes fade-in {
   from {
     opacity: 0;
-    transform: translateY(4px);
+    transform: translateY(6px);
   }
   to {
     opacity: 1;
@@ -54,5 +145,25 @@ body {
   }
 }
 .animate-fade-in {
-  animation: fade-in 0.25s ease-out;
+  animation: fade-in 0.3s ease-out both;
+}
+
+@keyframes shimmer {
+  to {
+    background-position: -200% 0;
+  }
+}
+
+/* Respect users who ask the OS for less motion. */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }

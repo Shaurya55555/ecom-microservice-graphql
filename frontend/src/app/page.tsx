@@ -1,87 +1,94 @@
-"use client";
+import Link from "next/link";
+import { ArrowRight, BadgeCheck, Store, Truck, Zap } from "lucide-react";
+import { buttonStyles } from "@/components/ui/Button";
+import { CATEGORIES } from "@/lib/categories";
+import { cn } from "@/lib/utils";
+import { NewArrivals } from "@/components/home/NewArrivals";
 
-import { useMemo, useState } from "react";
-import { useQuery } from "@apollo/client/react";
-import { Search, PackageX, AlertTriangle } from "lucide-react";
-import { GET_PRODUCTS } from "@/lib/graphql/queries";
-import { ProductCard } from "@/components/ProductCard";
-import { ProductCardSkeleton } from "@/components/ui/Skeleton";
-import { EmptyState } from "@/components/ui/EmptyState";
+const PERKS = [
+  { icon: Zap, title: "Live order updates", text: "Sellers respond in real time — your order page updates the moment they do." },
+  { icon: Store, title: "Independent sellers", text: "Every product is listed and fulfilled by the seller who owns it." },
+  { icon: BadgeCheck, title: "Verified accounts", text: "Role-based access and JWT-secured checkout keep every account safe." },
+  { icon: Truck, title: "Free shipping", text: "No delivery fees on any order, whatever the size." },
+];
 
-type Product = {
-  id: string;
-  name: string;
-  description: string;
-  price: number;
-};
-
-export default function CatalogPage() {
-  const { data, loading, error } = useQuery<{ getProducts: Product[] }>(GET_PRODUCTS);
-  const [search, setSearch] = useState("");
-
-  const products = useMemo(() => {
-    const all = data?.getProducts ?? [];
-    const q = search.trim().toLowerCase();
-    if (!q) return all;
-    return all.filter(
-      (p) =>
-        p.name.toLowerCase().includes(q) || p.description.toLowerCase().includes(q)
-    );
-  }, [data, search]);
-
+export default function HomePage() {
   return (
-    <div>
-      <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight text-white">Product Catalog</h1>
-          <p className="mt-1 text-sm text-neutral-400">
-            Live from <code className="rounded bg-white/5 px-1 py-0.5 text-neutral-300">getProducts</code> on the GraphQL gateway.
-          </p>
-        </div>
-        <div className="relative sm:w-64">
-          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-500" strokeWidth={2} />
-          <input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search products…"
-            className="w-full rounded-lg border border-white/10 bg-neutral-900 py-2 pl-9 pr-3 text-sm text-white placeholder:text-neutral-500 transition-colors focus:border-indigo-400/50 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
-          />
-        </div>
-      </div>
-
-      {loading && (
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3">
-          {Array.from({ length: 6 }).map((_, i) => (
-            <ProductCardSkeleton key={i} />
-          ))}
-        </div>
-      )}
-
-      {error && (
-        <div className="flex items-start gap-3 rounded-xl border border-red-500/20 bg-red-500/5 px-4 py-3.5 text-sm text-red-300">
-          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" strokeWidth={2} />
-          <p>
-            Could not reach the GraphQL gateway ({error.message}). Is it running at{" "}
-            <code className="text-red-200">{process.env.NEXT_PUBLIC_GRAPHQL_ENDPOINT || "http://localhost:4000/"}</code>?
-          </p>
-        </div>
-      )}
-
-      {!loading && !error && products.length === 0 && (
-        <EmptyState
-          icon={PackageX}
-          title={search ? `No products match "${search}"` : "No products yet"}
-          description={search ? "Try a different search term." : undefined}
+    <div className="space-y-16 sm:space-y-20">
+      <section className="relative isolate overflow-hidden rounded-3xl border border-line bg-surface px-6 py-14 shadow-[var(--shadow-card)] sm:px-12 sm:py-20">
+        <div
+          aria-hidden
+          className="absolute -right-24 -top-24 -z-10 h-80 w-80 rounded-full bg-gradient-to-br from-indigo-500/30 to-violet-500/10 blur-3xl"
         />
-      )}
-
-      {!loading && !error && products.length > 0 && (
-        <div className="grid animate-fade-in grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3">
-          {products.map((p) => (
-            <ProductCard key={p.id} product={p} />
-          ))}
+        <div
+          aria-hidden
+          className="absolute -bottom-32 left-1/3 -z-10 h-72 w-72 rounded-full bg-gradient-to-tr from-emerald-500/20 to-transparent blur-3xl"
+        />
+        <p className="inline-flex items-center gap-2 rounded-full border border-line bg-surface-2 px-3 py-1 text-xs font-medium text-muted">
+          <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" aria-hidden />
+          Marketplace live
+        </p>
+        <h1 className="mt-5 max-w-2xl text-4xl font-semibold leading-[1.1] tracking-tight text-fg sm:text-6xl">
+          Everything you need,{" "}
+          <span className="bg-gradient-to-r from-indigo-500 to-violet-500 bg-clip-text text-transparent">
+            from sellers you can trust.
+          </span>
+        </h1>
+        <p className="mt-5 max-w-xl text-base leading-relaxed text-muted sm:text-lg">
+          Browse independent sellers, place an order in seconds and watch it move from request to
+          accepted — all backed by a microservice architecture.
+        </p>
+        <div className="mt-8 flex flex-wrap gap-3">
+          <Link href="/products" className={buttonStyles({ size: "lg" })}>
+            Shop now
+            <ArrowRight className="h-4 w-4" strokeWidth={2} aria-hidden />
+          </Link>
+          <Link href="/signup" className={buttonStyles({ size: "lg", variant: "secondary" })}>
+            Start selling
+          </Link>
         </div>
-      )}
+      </section>
+
+      <section aria-labelledby="categories-heading">
+        <div className="mb-6 flex items-end justify-between">
+          <h2 id="categories-heading" className="text-xl font-semibold tracking-tight text-fg">
+            Shop by category
+          </h2>
+          <Link href="/products" className="text-sm font-medium text-brand-text hover:underline">
+            View all
+          </Link>
+        </div>
+        <ul className="grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-4">
+          {CATEGORIES.filter((c) => c.name !== "General").map((c) => (
+            <li key={c.name}>
+              <Link
+                href={`/products?category=${encodeURIComponent(c.name)}`}
+                className="group relative flex h-28 flex-col justify-between overflow-hidden rounded-2xl border border-line bg-surface p-4 transition-all hover:-translate-y-0.5 hover:border-brand/40 hover:shadow-[var(--shadow-lift)]"
+              >
+                <div aria-hidden className={cn("absolute inset-0 bg-gradient-to-br opacity-80", c.gradient)} />
+                <c.icon className="relative h-6 w-6 text-fg/70" strokeWidth={1.5} aria-hidden />
+                <span className="relative text-sm font-medium text-fg">{c.name}</span>
+              </Link>
+            </li>
+          ))}
+        </ul>
+      </section>
+
+      <NewArrivals />
+
+      <section aria-label="Why shop with us">
+        <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {PERKS.map((p) => (
+            <li key={p.title} className="rounded-2xl border border-line bg-surface p-5">
+              <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-soft text-brand-text">
+                <p.icon className="h-5 w-5" strokeWidth={1.75} aria-hidden />
+              </span>
+              <h3 className="mt-4 text-sm font-semibold text-fg">{p.title}</h3>
+              <p className="mt-1.5 text-sm leading-relaxed text-muted">{p.text}</p>
+            </li>
+          ))}
+        </ul>
+      </section>
     </div>
   );
 }
