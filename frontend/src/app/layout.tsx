@@ -18,6 +18,15 @@ const display = Fraunces({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://ecom-microservice-graphql.vercel.app"),
+  openGraph: {
+    type: "website",
+    siteName: "Ecom.store",
+    title: "Ecom.store - Shop, sell and ship",
+    description:
+      "Microservice e-commerce platform with a GraphQL gateway, Kafka and Docker.",
+  },
+  twitter: { card: "summary_large_image" },
   title: {
     default: "Ecom.store — Shop, sell and ship",
     template: "%s · Ecom.store",
