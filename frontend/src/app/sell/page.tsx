@@ -1,305 +1,285 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useMutation, useQuery } from "@apollo/client/react";
-import {
-  Store,
-  Check,
-  X,
-  PackagePlus,
-  Package,
-  Inbox,
-  Loader2,
-  AlertCircle,
-  CheckCircle2,
-} from "lucide-react";
-import { CREATE_PRODUCT, RESPOND_TO_ORDER } from "@/lib/graphql/mutations";
+import { Check, DollarSign, Inbox, Package, Pencil, Trash2, X } from "lucide-react";
+import { toast } from "sonner";
+import { DELETE_PRODUCT, RESPOND_TO_ORDER } from "@/lib/graphql/mutations";
 import { GET_PRODUCTS, GET_SELLER_ORDERS } from "@/lib/graphql/queries";
-import { useSession } from "@/lib/useSession";
-import { Card, CardRow, SectionHeading } from "@/components/ui/Card";
-import { CardRowSkeleton } from "@/components/ui/Skeleton";
-import { EmptyState } from "@/components/ui/EmptyState";
+import type { Order, Product } from "@/lib/types";
+import type { Session } from "@/lib/auth";
+import { formatPrice, friendlyError, shortId } from "@/lib/utils";
+import { RequireRole } from "@/components/layout/RequireRole";
+import { ProductForm } from "@/components/seller/ProductForm";
+import { ProductImage } from "@/components/product/ProductImage";
 import { Badge, STATUS_VARIANT } from "@/components/ui/Badge";
-
-type Product = {
-  id: string;
-  name: string;
-  description: string;
-  price: number;
-  sellerId: string | null;
-};
-
-type Order = {
-  id: string;
-  productId: string;
-  userId: string;
-  quantity: number;
-  status: string;
-};
+import { Button } from "@/components/ui/Button";
+import { Card, SectionHeading } from "@/components/ui/Card";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { ErrorState } from "@/components/ui/ErrorState";
+import { CardRowSkeleton } from "@/components/ui/Skeleton";
 
 export default function SellPage() {
-  const { session, ready } = useSession();
-  const isSeller = !!session && session.role === "seller";
+  return (
+    <RequireRole roles={["seller"]} what="the seller dashboard">
+      {(session) => <Dashboard session={session} />}
+    </RequireRole>
+  );
+}
 
-  const productsQuery = useQuery<{ getProducts: Product[] }>(GET_PRODUCTS, { skip: !isSeller });
-  const ordersQuery = useQuery<{ getSellerOrders: Order[] }>(GET_SELLER_ORDERS, {
-    skip: !isSeller,
-    pollInterval: isSeller ? 5000 : undefined,
-  });
-  const [createProduct, { loading: creating, error: createError }] = useMutation(CREATE_PRODUCT);
-  const [respond, { loading: responding }] = useMutation(RESPOND_TO_ORDER);
+function Dashboard({ session }: { session: Session }) {
+  const productsQuery = useQuery<{ getProducts: Product[] }>(GET_PRODUCTS);
+  const ordersQuery = useQuery<{ getSellerOrders: Order[] }>(GET_SELLER_ORDERS, { pollInterval: 6000 });
+  const [respond] = useMutation(RESPOND_TO_ORDER);
+  const [deleteProduct, { loading: deleting }] = useMutation(DELETE_PRODUCT);
 
-  const [name, setName] = useState("");
-  const [description, setDescription] = useState("");
-  const [price, setPrice] = useState("");
-  const [justAdded, setJustAdded] = useState(false);
   const [respondingId, setRespondingId] = useState<string | null>(null);
+  const [editing, setEditing] = useState<Product | null>(null);
+  const [toDelete, setToDelete] = useState<Product | null>(null);
 
-  if (!ready) return null;
-
-  if (!session) {
-    return (
-      <p className="text-sm text-neutral-400">
-        <Link href="/login" className="font-medium text-indigo-300 hover:underline">
-          Log in
-        </Link>{" "}
-        to access the seller dashboard.
-      </p>
-    );
-  }
-
-  if (!isSeller) {
-    return (
-      <p className="text-sm text-neutral-400">
-        This dashboard is for seller accounts. You&apos;re signed in as a{" "}
-        <span className="text-white">{session.role}</span>.
-      </p>
-    );
-  }
-
-  const myProducts = (productsQuery.data?.getProducts ?? []).filter(
-    (p) => p.sellerId === session.userId
+  const allProducts = useMemo(() => productsQuery.data?.getProducts ?? [], [productsQuery.data]);
+  const myProducts = useMemo(
+    () => allProducts.filter((p) => p.sellerId === session.userId),
+    [allProducts, session.userId]
   );
-  const productName = (id: string) =>
-    productsQuery.data?.getProducts.find((p) => p.id === id)?.name ?? id.slice(-6);
+  const productById = useMemo(() => new Map(allProducts.map((p) => [p.id, p])), [allProducts]);
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    const parsedPrice = parseFloat(price);
-    if (!name || !description || isNaN(parsedPrice)) return;
-    await createProduct({ variables: { name, description, price: parsedPrice } });
-    setName("");
-    setDescription("");
-    setPrice("");
-    setJustAdded(true);
-    setTimeout(() => setJustAdded(false), 2000);
-    productsQuery.refetch();
+  const orders = useMemo(() => [...(ordersQuery.data?.getSellerOrders ?? [])].reverse(), [ordersQuery.data]);
+  const pending = orders.filter((o) => o.status === "Pending");
+  const past = orders.filter((o) => o.status !== "Pending");
+  const revenue = orders
+    .filter((o) => o.status === "Accepted")
+    .reduce((sum, o) => sum + (productById.get(o.productId)?.price ?? 0) * o.quantity, 0);
+
+  async function handleRespond(order: Order, accept: boolean) {
+    setRespondingId(order.id);
+    try {
+      await respond({ variables: { id: order.id, accept } });
+      await ordersQuery.refetch();
+      toast.success(accept ? "Order accepted" : "Order rejected");
+    } catch (err) {
+      toast.error(friendlyError(err, "Couldn't update that order."));
+    } finally {
+      setRespondingId(null);
+    }
   }
 
-  async function handleRespond(id: string, accept: boolean) {
-    setRespondingId(id);
-    await respond({ variables: { id, accept } });
-    ordersQuery.refetch();
-    setRespondingId(null);
+  async function confirmDelete() {
+    if (!toDelete) return;
+    try {
+      await deleteProduct({ variables: { id: toDelete.id }, refetchQueries: [GET_PRODUCTS] });
+      toast.success(`Deleted ${toDelete.name}`);
+      if (editing?.id === toDelete.id) setEditing(null);
+    } catch (err) {
+      toast.error(friendlyError(err, "Couldn't delete that product."));
+    } finally {
+      setToDelete(null);
+    }
   }
-
-  const pendingOrders = (ordersQuery.data?.getSellerOrders ?? []).filter(
-    (o) => o.status === "Pending"
-  );
-  const pastOrders = (ordersQuery.data?.getSellerOrders ?? []).filter(
-    (o) => o.status !== "Pending"
-  );
 
   return (
-    <div className="max-w-2xl animate-fade-in">
-      <div className="flex items-center gap-3">
-        <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 shadow-lg shadow-emerald-500/20">
-          <Store className="h-5 w-5 text-white" strokeWidth={2} />
-        </div>
-        <div>
-          <h1 className="text-lg font-semibold text-white">Seller dashboard</h1>
-          <p className="text-sm text-neutral-400">{session.username}</p>
-        </div>
+    <div className="animate-fade-in">
+      <div>
+        <h1 className="text-3xl font-medium tracking-tight text-fg sm:text-4xl">Seller dashboard</h1>
+        <p className="mt-1 text-sm text-muted">Signed in as {session.username}</p>
       </div>
 
-      <div className="mt-6 grid grid-cols-2 gap-3">
-        <Card className="p-4">
-          <p className="text-xs text-neutral-500">Pending requests</p>
-          <p className="mt-1 text-2xl font-semibold text-white">
-            {ordersQuery.data ? pendingOrders.length : "—"}
-          </p>
-        </Card>
-        <Card className="p-4">
-          <p className="text-xs text-neutral-500">Your products</p>
-          <p className="mt-1 text-2xl font-semibold text-white">
-            {productsQuery.data ? myProducts.length : "—"}
-          </p>
-        </Card>
-      </div>
-
-      <div className="mt-8">
-        <SectionHeading
-          title="Order requests"
-          hint="Refreshes every 5s"
+      <div className="mt-8 grid grid-cols-1 gap-3 sm:grid-cols-3">
+        <Stat icon={Inbox} label="Pending requests" value={ordersQuery.data ? pending.length : "—"} />
+        <Stat icon={Package} label="Your products" value={productsQuery.data ? myProducts.length : "—"} />
+        <Stat
+          icon={DollarSign}
+          label="Accepted sales"
+          value={ordersQuery.data && productsQuery.data ? formatPrice(revenue) : "—"}
         />
-
-        {ordersQuery.loading && (
-          <Card className="divide-y divide-white/10">
-            <CardRowSkeleton />
-          </Card>
-        )}
-        {ordersQuery.error && (
-          <div className="flex items-center gap-2 rounded-lg border border-red-500/20 bg-red-500/5 px-4 py-3 text-sm text-red-300">
-            <AlertCircle className="h-4 w-4 shrink-0" strokeWidth={2} />
-            {ordersQuery.error.message}
-          </div>
-        )}
-
-        {!ordersQuery.loading && !ordersQuery.error && (
-          <Card className="divide-y divide-white/10">
-            {pendingOrders.length === 0 && pastOrders.length === 0 && (
-              <EmptyState icon={Inbox} title="No requests yet" description="Buyer requests against your products will land here." />
-            )}
-            {pendingOrders.map((o) => (
-              <CardRow key={o.id}>
-                <div>
-                  <p className="text-sm text-white">{productName(o.productId)}</p>
-                  <p className="text-xs text-neutral-400">Qty {o.quantity} · Request #{o.id.slice(-6)}</p>
-                </div>
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => handleRespond(o.id, true)}
-                    disabled={responding && respondingId === o.id}
-                    className="flex items-center gap-1 rounded-md bg-emerald-500/90 px-3 py-1.5 text-xs font-medium text-white hover:bg-emerald-500 disabled:opacity-60"
-                  >
-                    {responding && respondingId === o.id ? (
-                      <Loader2 className="h-3 w-3 animate-spin" strokeWidth={2.5} />
-                    ) : (
-                      <Check className="h-3 w-3" strokeWidth={2.5} />
-                    )}
-                    Accept
-                  </button>
-                  <button
-                    onClick={() => handleRespond(o.id, false)}
-                    disabled={responding && respondingId === o.id}
-                    className="flex items-center gap-1 rounded-md bg-white/5 px-3 py-1.5 text-xs font-medium text-neutral-300 hover:bg-red-500/90 hover:text-white disabled:opacity-60"
-                  >
-                    <X className="h-3 w-3" strokeWidth={2.5} />
-                    Reject
-                  </button>
-                </div>
-              </CardRow>
-            ))}
-            {pastOrders.map((o) => (
-              <CardRow key={o.id}>
-                <div>
-                  <p className="text-sm text-white">{productName(o.productId)}</p>
-                  <p className="text-xs text-neutral-400">Qty {o.quantity} · Request #{o.id.slice(-6)}</p>
-                </div>
-                <Badge variant={STATUS_VARIANT[o.status] ?? "neutral"}>{o.status}</Badge>
-              </CardRow>
-            ))}
-          </Card>
-        )}
       </div>
 
-      <Card className="mt-8 p-6">
-        <div className="flex items-center gap-2">
-          <PackagePlus className="h-4 w-4 text-neutral-400" strokeWidth={2} />
-          <h2 className="text-sm font-medium text-white">List a new product</h2>
+      <div className="mt-10 grid gap-8 lg:grid-cols-[1fr_380px]">
+        <div className="space-y-10">
+          <section>
+            <SectionHeading title="Order requests" hint="Updates every few seconds" />
+            {ordersQuery.error && (
+              <ErrorState error={ordersQuery.error} title="Couldn't load requests" onRetry={() => ordersQuery.refetch()} />
+            )}
+            {ordersQuery.loading && !ordersQuery.data && (
+              <Card className="divide-y divide-line">
+                <CardRowSkeleton />
+                <CardRowSkeleton />
+              </Card>
+            )}
+            {ordersQuery.data && (
+              <Card className="divide-y divide-line">
+                {orders.length === 0 && (
+                  <EmptyState
+                    icon={Inbox}
+                    title="No requests yet"
+                    description="When a buyer orders one of your products, it lands here for you to accept or reject."
+                  />
+                )}
+                {pending.map((o) => {
+                  const p = productById.get(o.productId);
+                  const busy = respondingId === o.id;
+                  return (
+                    <div key={o.id} className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:px-5">
+                      <div className="flex min-w-0 flex-1 items-center gap-3">
+                        <ProductImage
+                          src={p?.imageUrl}
+                          alt=""
+                          category={p?.category}
+                          seed={o.productId}
+                          className="h-12 w-12 shrink-0 rounded-lg border border-line"
+                        />
+                        <div className="min-w-0">
+                          <p className="truncate text-sm font-medium text-fg">{p?.name ?? "Unknown product"}</p>
+                          <p className="text-xs text-subtle">
+                            Request #{shortId(o.id)} · Qty {o.quantity}
+                            {p && ` · ${formatPrice(p.price * o.quantity)}`}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex gap-2">
+                        <Button
+                          size="sm"
+                          variant="success"
+                          loading={busy}
+                          disabled={respondingId !== null}
+                          onClick={() => handleRespond(o, true)}
+                        >
+                          <Check className="h-3.5 w-3.5" strokeWidth={2.5} aria-hidden />
+                          Accept
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="danger"
+                          disabled={respondingId !== null}
+                          onClick={() => handleRespond(o, false)}
+                        >
+                          <X className="h-3.5 w-3.5" strokeWidth={2.5} aria-hidden />
+                          Reject
+                        </Button>
+                      </div>
+                    </div>
+                  );
+                })}
+                {past.map((o) => {
+                  const p = productById.get(o.productId);
+                  return (
+                    <div key={o.id} className="flex items-center justify-between gap-4 px-4 py-3.5 sm:px-5">
+                      <div className="min-w-0">
+                        <p className="truncate text-sm text-fg">{p?.name ?? "Unknown product"}</p>
+                        <p className="text-xs text-subtle">
+                          Request #{shortId(o.id)} · Qty {o.quantity}
+                        </p>
+                      </div>
+                      <Badge variant={STATUS_VARIANT[o.status] ?? "neutral"}>{o.status}</Badge>
+                    </div>
+                  );
+                })}
+              </Card>
+            )}
+          </section>
+
+          <section>
+            <SectionHeading title="Your products" count={productsQuery.data ? myProducts.length : undefined} />
+            {productsQuery.error && (
+              <ErrorState error={productsQuery.error} title="Couldn't load products" onRetry={() => productsQuery.refetch()} />
+            )}
+            {productsQuery.loading && !productsQuery.data && (
+              <Card className="divide-y divide-line">
+                <CardRowSkeleton />
+                <CardRowSkeleton />
+              </Card>
+            )}
+            {productsQuery.data && (
+              <Card className="divide-y divide-line">
+                {myProducts.length === 0 && (
+                  <EmptyState
+                    icon={Package}
+                    title="Nothing listed yet"
+                    description="Use the form to list your first product."
+                  />
+                )}
+                {myProducts.map((p) => (
+                  <div key={p.id} className="flex items-center gap-3 px-4 py-3.5 sm:px-5">
+                    <ProductImage
+                      src={p.imageUrl}
+                      alt=""
+                      category={p.category}
+                      seed={p.id}
+                      className="h-12 w-12 shrink-0 rounded-lg border border-line"
+                    />
+                    <div className="min-w-0 flex-1">
+                      <Link href={`/products/${p.id}`} className="block truncate text-sm font-medium text-fg hover:text-brand-text">
+                        {p.name}
+                      </Link>
+                      <p className="text-xs text-subtle">
+                        {p.category || "General"} · {formatPrice(p.price)}
+                      </p>
+                    </div>
+                    <div className="flex gap-1">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setEditing(p);
+                          window.scrollTo({ top: 0, behavior: "smooth" });
+                        }}
+                        aria-label={`Edit ${p.name}`}
+                        className="flex h-8 w-8 items-center justify-center rounded-lg text-muted hover:bg-surface-2 hover:text-fg"
+                      >
+                        <Pencil className="h-4 w-4" strokeWidth={1.75} aria-hidden />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setToDelete(p)}
+                        aria-label={`Delete ${p.name}`}
+                        className="flex h-8 w-8 items-center justify-center rounded-lg text-muted hover:bg-danger-soft hover:text-danger"
+                      >
+                        <Trash2 className="h-4 w-4" strokeWidth={1.75} aria-hidden />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </Card>
+            )}
+          </section>
         </div>
-        <form onSubmit={handleSubmit} className="mt-4 space-y-4">
-          <div>
-            <label className="mb-1.5 block text-xs font-medium text-neutral-400">Name</label>
-            <input
-              required
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              className="w-full rounded-lg border border-white/10 bg-neutral-950 px-3 py-2 text-sm text-white transition-colors focus:border-indigo-400/50 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
-            />
-          </div>
-          <div>
-            <label className="mb-1.5 block text-xs font-medium text-neutral-400">Description</label>
-            <input
-              required
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              className="w-full rounded-lg border border-white/10 bg-neutral-950 px-3 py-2 text-sm text-white transition-colors focus:border-indigo-400/50 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
-            />
-          </div>
-          <div>
-            <label className="mb-1.5 block text-xs font-medium text-neutral-400">Price</label>
-            <div className="relative">
-              <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-neutral-500">$</span>
-              <input
-                type="number"
-                step="0.01"
-                min="0"
-                required
-                value={price}
-                onChange={(e) => setPrice(e.target.value)}
-                className="w-full rounded-lg border border-white/10 bg-neutral-950 py-2 pl-7 pr-3 text-sm text-white transition-colors focus:border-indigo-400/50 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
-              />
-            </div>
-          </div>
 
-          {createError && (
-            <div className="flex items-start gap-2 rounded-lg border border-red-500/20 bg-red-500/5 px-3 py-2.5 text-xs text-red-300">
-              <AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0" strokeWidth={2} />
-              {createError.message}
-            </div>
-          )}
-          {justAdded && (
-            <div className="flex items-center gap-2 rounded-lg border border-emerald-500/20 bg-emerald-500/5 px-3 py-2.5 text-xs text-emerald-300">
-              <CheckCircle2 className="h-3.5 w-3.5 shrink-0" strokeWidth={2} />
-              Product listed.
-            </div>
-          )}
-
-          <button
-            type="submit"
-            disabled={creating}
-            className="flex w-full items-center justify-center gap-2 rounded-lg bg-indigo-500 py-2.5 text-sm font-medium text-white shadow-sm shadow-indigo-500/30 transition-colors hover:bg-indigo-400 disabled:opacity-60"
-          >
-            {creating && <Loader2 className="h-4 w-4 animate-spin" strokeWidth={2} />}
-            {creating ? "Listing…" : "List product"}
-          </button>
-        </form>
-      </Card>
-
-      <div className="mt-8">
-        <SectionHeading title="Your products" count={!productsQuery.loading ? myProducts.length : undefined} />
-
-        {productsQuery.loading && (
-          <Card className="divide-y divide-white/10">
-            <CardRowSkeleton />
-          </Card>
-        )}
-        {productsQuery.error && (
-          <div className="flex items-center gap-2 rounded-lg border border-red-500/20 bg-red-500/5 px-4 py-3 text-sm text-red-300">
-            <AlertCircle className="h-4 w-4 shrink-0" strokeWidth={2} />
-            {productsQuery.error.message}
-          </div>
-        )}
-
-        {!productsQuery.loading && !productsQuery.error && (
-          <Card className="divide-y divide-white/10">
-            {myProducts.length === 0 && (
-              <EmptyState icon={Package} title="Nothing listed yet" description="Products you list will show up here." />
-            )}
-            {myProducts.map((p) => (
-              <CardRow key={p.id}>
-                <div>
-                  <p className="text-sm text-white">{p.name}</p>
-                  <p className="text-xs text-neutral-400">{p.description}</p>
-                </div>
-                <span className="text-sm font-medium text-white">${p.price.toFixed(2)}</span>
-              </CardRow>
-            ))}
-          </Card>
-        )}
+        <aside className="lg:sticky lg:top-24 lg:self-start">
+          <ProductForm key={editing?.id ?? "new"} product={editing} onDone={() => setEditing(null)} />
+        </aside>
       </div>
+
+      <ConfirmDialog
+        open={!!toDelete}
+        title="Delete this product?"
+        description={`“${toDelete?.name ?? ""}” will be removed from the store. Existing orders keep their history.`}
+        confirmLabel="Delete"
+        loading={deleting}
+        onConfirm={confirmDelete}
+        onCancel={() => setToDelete(null)}
+      />
     </div>
+  );
+}
+
+function Stat({
+  icon: Icon,
+  label,
+  value,
+}: {
+  icon: typeof Inbox;
+  label: string;
+  value: React.ReactNode;
+}) {
+  return (
+    <Card className="p-4">
+      <div className="flex items-center gap-2 text-subtle">
+        <Icon className="h-4 w-4" strokeWidth={1.75} aria-hidden />
+        <p className="text-xs">{label}</p>
+      </div>
+      <p className="mt-2 text-2xl font-semibold tabular-nums text-fg">{value}</p>
+    </Card>
   );
 }

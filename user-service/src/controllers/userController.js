@@ -33,6 +33,11 @@ const registerUser = async (req, res) => {
 
         res.status(201).json({ message: 'User registered successfully', userId: newUser._id });
     } catch (error) {
+        // The email pre-check above can race, and username has its own unique index:
+        // report either as a conflict instead of a generic 500.
+        if (error.code === 11000) {
+            return res.status(409).json({ message: 'Username or email already in use' });
+        }
         console.error('Error registering user:', error);
         res.status(500).json({ message: 'Error registering user', error: error.message });
     }

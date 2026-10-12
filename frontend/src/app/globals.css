@@ -1,28 +1,142 @@
 @import "tailwindcss";
 
+/* Class-based dark mode, driven by next-themes (attribute="class"). */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/*
+ * Warm "paper" palette: beige surfaces, ink-brown text, one terracotta accent.
+ * Contrast (WCAG AA) on the page background:
+ *   light: fg 12.9:1 · muted 6.1:1 · subtle 5.0:1 · brand-text 7.0:1
+ *   dark:  fg 12.4:1 · muted 7.3:1 · subtle 5.3:1 · brand-text 7.6:1
+ */
 :root {
-  --background: #0a0a0b;
-  --foreground: #ededed;
+  --bg: #f4eee3;
+  --surface: #faf6ee;
+  --surface-2: #ebe3d4;
+  --fg: #2a2520;
+  --muted: #5f564b;
+  --subtle: #6f6558;
+  --line: #d9cfbc;
+  --line-strong: #c9bda6;
+  --brand: #a64b2a;
+  --brand-hover: #8a3d21;
+  --brand-fg: #fffaf2;
+  --brand-soft: rgb(166 75 42 / 0.1);
+  --brand-text: #8a3d21;
+  --success: #4a6b34;
+  --success-soft: rgb(74 107 52 / 0.13);
+  --warning: #8a5a0d;
+  --warning-soft: rgb(176 120 20 / 0.16);
+  --danger: #a12e2a;
+  --danger-soft: rgb(161 46 42 / 0.1);
+  --ring: rgb(166 75 42 / 0.35);
+  --shadow-lift: 0 8px 24px rgb(70 45 20 / 0.14);
+
+  /* Flat tones for product/category artwork. */
+  --tone-sand: #e6dac4;
+  --tone-clay: #e5c6b2;
+  --tone-sage: #d0d7c0;
+  --tone-ochre: #ead6a4;
+  --tone-dusk: #dbd1d4;
+  --tone-stone: #dad4c9;
+  --tone-rose: #e8cdc6;
+  --tone-sky: #cfd8d4;
+  color-scheme: light;
+}
+
+.dark {
+  --bg: #1b1713;
+  --surface: #241f1a;
+  --surface-2: #2e2822;
+  --fg: #ece3d4;
+  --muted: #b5a995;
+  --subtle: #9a8e7b;
+  --line: #3a332b;
+  --line-strong: #4b4238;
+  --brand: #d98a65;
+  --brand-hover: #e5a07f;
+  --brand-fg: #1b1713;
+  --brand-soft: rgb(217 138 101 / 0.14);
+  --brand-text: #e8a584;
+  --success: #a3c47f;
+  --success-soft: rgb(163 196 127 / 0.14);
+  --warning: #e3b45c;
+  --warning-soft: rgb(227 180 92 / 0.14);
+  --danger: #f08d84;
+  --danger-soft: rgb(240 141 132 / 0.12);
+  --ring: rgb(217 138 101 / 0.45);
+  --shadow-lift: 0 10px 30px rgb(0 0 0 / 0.5);
+
+  --tone-sand: #3a3226;
+  --tone-clay: #46332a;
+  --tone-sage: #323a2c;
+  --tone-ochre: #43391f;
+  --tone-dusk: #3a3236;
+  --tone-stone: #34312b;
+  --tone-rose: #45302d;
+  --tone-sky: #2f3a37;
+  color-scheme: dark;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-fg: var(--fg);
+  --color-muted: var(--muted);
+  --color-subtle: var(--subtle);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-brand: var(--brand);
+  --color-brand-hover: var(--brand-hover);
+  --color-brand-fg: var(--brand-fg);
+  --color-brand-soft: var(--brand-soft);
+  --color-brand-text: var(--brand-text);
+  --color-success: var(--success);
+  --color-success-soft: var(--success-soft);
+  --color-warning: var(--warning);
+  --color-warning-soft: var(--warning-soft);
+  --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
+  --color-tone-sand: var(--tone-sand);
+  --color-tone-clay: var(--tone-clay);
+  --color-tone-sage: var(--tone-sage);
+  --color-tone-ochre: var(--tone-ochre);
+  --color-tone-dusk: var(--tone-dusk);
+  --color-tone-stone: var(--tone-stone);
+  --color-tone-rose: var(--tone-rose);
+  --color-tone-sky: var(--tone-sky);
+  --font-sans: var(--font-body);
+  --font-serif: var(--font-display);
+  --shadow-lift: var(--shadow-lift);
+}
+
+html {
+  scroll-behavior: smooth;
 }
 
 body {
-  background:
-    radial-gradient(1200px 600px at 15% -10%, rgba(99, 102, 241, 0.08), transparent 60%),
-    radial-gradient(900px 500px at 100% 0%, rgba(16, 185, 129, 0.05), transparent 55%),
-    var(--background);
-  color: var(--foreground);
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-body), system-ui, sans-serif;
+  font-feature-settings: "ss01", "cv11";
+}
+
+/* Page titles use the serif; everything else stays in the sans. */
+h1,
+.font-serif {
+  font-family: var(--font-display), Georgia, serif;
+  font-optical-sizing: auto;
 }
 
 ::selection {
-  background: rgba(99, 102, 241, 0.35);
-  color: #fff;
+  background: rgb(166 75 42 / 0.25);
+}
+
+:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+  border-radius: 4px;
 }
 
 ::-webkit-scrollbar {
@@ -33,20 +147,15 @@ body {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.12);
+  background: var(--line-strong);
   border-radius: 999px;
-  border: 2px solid transparent;
-  background-clip: padding-box;
-}
-::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.2);
-  background-clip: padding-box;
+  border: 2px solid var(--bg);
 }
 
 @keyframes fade-in {
   from {
     opacity: 0;
-    transform: translateY(4px);
+    transform: translateY(6px);
   }
   to {
     opacity: 1;
@@ -54,5 +163,70 @@ body {
   }
 }
 .animate-fade-in {
-  animation: fade-in 0.25s ease-out;
+  animation: fade-in 0.3s ease-out both;
+}
+
+/* Slide-over panels enter from the edge set by --sheet-from (see components/ui/Sheet.tsx). */
+@keyframes sheet-in {
+  from {
+    transform: translate(var(--sheet-from, 0 100%));
+  }
+  to {
+    transform: translate(0, 0);
+  }
+}
+
+/* Heart that pops where you double-tapped. */
+@keyframes heart-pop {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.4);
+  }
+  25% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1.15);
+  }
+  60% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -70%) scale(1);
+  }
+}
+.animate-heart-pop {
+  animation: heart-pop 0.8s ease-out both;
+}
+
+/* Cart badge nudge when an item is added. */
+@keyframes bump {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  40% {
+    transform: scale(1.35);
+  }
+}
+.animate-bump {
+  animation: bump 0.35s ease-out;
+}
+
+dialog::backdrop {
+  background: rgb(30 22 14 / 0.45);
+}
+
+/* Respect users who ask the OS for less motion. */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }

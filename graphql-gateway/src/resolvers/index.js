@@ -53,10 +53,25 @@ const resolvers = {
       const response = await axios.post(`${process.env.USER_SERVICE_URL}/users`, { name, email });
       return response.data;
     },
-    createProduct: async (_, { name, description, price }, context) => {
+    createProduct: async (_, { name, description, price, category, imageUrl }, context) => {
       const response = await axios.post(
         `${process.env.PRODUCT_SERVICE_URL}/products`,
-        { name, description, price },
+        { name, description, price, category, imageUrl },
+        authHeaders(context)
+      );
+      return response.data;
+    },
+    updateProduct: async (_, { id, ...fields }, context) => {
+      const response = await axios.put(
+        `${process.env.PRODUCT_SERVICE_URL}/products/${id}`,
+        fields,
+        authHeaders(context)
+      );
+      return response.data;
+    },
+    deleteProduct: async (_, { id }, context) => {
+      const response = await axios.delete(
+        `${process.env.PRODUCT_SERVICE_URL}/products/${id}`,
         authHeaders(context)
       );
       return response.data;

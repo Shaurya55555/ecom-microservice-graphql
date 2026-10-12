@@ -1,29 +1,28 @@
+import { cn } from "@/lib/utils";
+
 export function Card({
   children,
-  className = "",
+  className,
 }: {
   children: React.ReactNode;
   className?: string;
 }) {
-  return (
-    <div
-      className={`rounded-2xl border border-white/10 bg-neutral-900/50 shadow-[0_1px_0_0_rgba(255,255,255,0.04)_inset] backdrop-blur-sm ${className}`}
-    >
-      {children}
-    </div>
-  );
+  return <div className={cn("rounded-xl border border-line bg-surface", className)}>{children}</div>;
 }
 
 export function CardRow({
   children,
-  className = "",
+  className,
 }: {
   children: React.ReactNode;
   className?: string;
 }) {
   return (
     <div
-      className={`flex items-center justify-between gap-4 px-5 py-4 transition-colors first:rounded-t-2xl last:rounded-b-2xl hover:bg-white/[0.03] ${className}`}
+      className={cn(
+        "flex items-center justify-between gap-4 px-5 py-4 transition-colors first:rounded-t-xl last:rounded-b-xl hover:bg-surface-2/60",
+        className
+      )}
     >
       {children}
     </div>
@@ -34,20 +33,42 @@ export function SectionHeading({
   title,
   hint,
   count,
+  action,
 }: {
   title: string;
   hint?: string;
   count?: number;
+  action?: React.ReactNode;
 }) {
   return (
     <div className="mb-3 flex items-baseline justify-between gap-3">
-      <h2 className="text-sm font-semibold tracking-wide text-white">
+      <h2 className="font-serif text-lg font-medium text-fg">
         {title}
         {count !== undefined && (
-          <span className="ml-2 text-xs font-normal text-neutral-500">({count})</span>
+          <span className="ml-2 font-sans text-xs font-normal text-subtle">({count})</span>
         )}
       </h2>
-      {hint && <p className="text-xs text-neutral-500">{hint}</p>}
+      {action ?? (hint && <p className="text-xs text-subtle">{hint}</p>)}
+    </div>
+  );
+}
+
+export function PageHeader({
+  title,
+  description,
+  action,
+}: {
+  title: string;
+  description?: React.ReactNode;
+  action?: React.ReactNode;
+}) {
+  return (
+    <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+      <div>
+        <h1 className="text-3xl font-medium tracking-tight text-fg sm:text-4xl">{title}</h1>
+        {description && <p className="mt-2 text-sm text-muted">{description}</p>}
+      </div>
+      {action}
     </div>
   );
 }

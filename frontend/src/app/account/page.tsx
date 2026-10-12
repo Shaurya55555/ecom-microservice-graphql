@@ -1,119 +1,161 @@
 "use client";
 
+import { useMemo } from "react";
 import Link from "next/link";
 import { useQuery } from "@apollo/client/react";
-import { ClipboardList, ChevronRight, AlertTriangle } from "lucide-react";
-import { GET_ORDERS } from "@/lib/graphql/queries";
-import { useSession } from "@/lib/useSession";
+import { ChevronRight, ClipboardList, Heart, ShoppingCart } from "lucide-react";
+import { GET_ORDERS, GET_PRODUCTS } from "@/lib/graphql/queries";
+import type { Order, Product } from "@/lib/types";
+import { RequireRole } from "@/components/layout/RequireRole";
 import { Card, SectionHeading } from "@/components/ui/Card";
 import { CardRowSkeleton } from "@/components/ui/Skeleton";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { ErrorState } from "@/components/ui/ErrorState";
 import { Badge, STATUS_VARIANT } from "@/components/ui/Badge";
-
-type Order = {
-  id: string;
-  productId: string;
-  userId: string;
-  quantity: number;
-  status: string;
-};
+import { buttonStyles } from "@/components/ui/Button";
+import { ProductImage } from "@/components/product/ProductImage";
+import { BuyAgainButton } from "@/components/orders/BuyAgainButton";
+import { useAppSelector } from "@/lib/redux/hooks";
+import { selectCartCount } from "@/lib/redux/cartSlice";
+import { formatPrice, shortId } from "@/lib/utils";
+import type { Session } from "@/lib/auth";
 
 export default function AccountPage() {
-  const { session, ready } = useSession();
-  const { data, loading, error } = useQuery<{ getOrders: Order[] }>(GET_ORDERS, {
-    skip: !session,
-  });
+  return (
+    <RequireRole roles={["user"]} what="your account">
+      {(session) => <Account session={session} />}
+    </RequireRole>
+  );
+}
 
-  if (!ready) return null;
+function Account({ session }: { session: Session }) {
+  const orders = useQuery<{ getOrders: Order[] }>(GET_ORDERS);
+  const products = useQuery<{ getProducts: Product[] }>(GET_PRODUCTS);
+  const wishCount = useAppSelector((s) => s.wishlist.ids.length);
+  const cartCount = useAppSelector(selectCartCount);
 
-  if (!session) {
-    return (
-      <p className="text-sm text-neutral-400">
-        <Link href="/login" className="font-medium text-indigo-300 hover:underline">
-          Log in
-        </Link>{" "}
-        to view your account.
-      </p>
-    );
-  }
+  const productById = useMemo(
+    () => new Map((products.data?.getProducts ?? []).map((p) => [p.id, p])),
+    [products.data]
+  );
+  // The schema has no per-user order query, so scope to this buyer client-side.
+  const mine = useMemo(
+    () => [...(orders.data?.getOrders ?? [])].filter((o) => o.userId === session.userId).reverse(),
+    [orders.data, session.userId]
+  );
 
-  if (session.role !== "user") {
-    return (
-      <p className="text-sm text-neutral-400">
-        This is the buyer account page. You&apos;re signed in as a{" "}
-        <span className="text-white">{session.role}</span> —{" "}
-        <Link
-          href={session.role === "seller" ? "/sell" : "/admin"}
-          className="font-medium text-indigo-300 hover:underline"
-        >
-          go to your dashboard →
-        </Link>
-      </p>
-    );
-  }
-
-  const myOrders = (data?.getOrders ?? []).filter((o) => o.userId === session.userId);
+  const pending = mine.filter((o) => o.status === "Pending").length;
+  const accepted = mine.filter((o) => o.status === "Accepted").length;
+  const spent = mine
+    .filter((o) => o.status === "Accepted")
+    .reduce((sum, o) => sum + (productById.get(o.productId)?.price ?? 0) * o.quantity, 0);
 
   return (
-    <div className="max-w-2xl animate-fade-in">
-      <div className="flex items-center gap-3">
-        <div className="flex h-11 w-11 items-center justify-center rounded-full bg-gradient-to-br from-indigo-500 to-violet-600 text-sm font-semibold text-white">
+    <div className="animate-fade-in">
+      <div className="flex items-center gap-4">
+        <div className="flex h-14 w-14 items-center justify-center rounded-full bg-brand-soft font-serif text-xl text-brand-text">
           {session.username.slice(0, 2).toUpperCase()}
         </div>
         <div>
-          <h1 className="text-lg font-semibold text-white">{session.username}</h1>
-          <p className="text-sm text-neutral-400">{session.email}</p>
+          <h1 className="text-3xl font-medium tracking-tight text-fg">{session.username}</h1>
+          <p className="text-sm text-muted">{session.email}</p>
         </div>
       </div>
 
-      <div className="mt-8">
-        <SectionHeading
-          title="Order history"
-          count={!loading ? myOrders.length : undefined}
-          hint="Filtered client-side — the schema has no per-user order query."
-        />
-
-        {error && (
-          <div className="flex items-center gap-2 rounded-lg border border-red-500/20 bg-red-500/5 px-4 py-3 text-sm text-red-300">
-            <AlertTriangle className="h-4 w-4 shrink-0" strokeWidth={2} />
-            {error.message}
-          </div>
-        )}
-
-        {loading && (
-          <Card className="divide-y divide-white/10">
-            <CardRowSkeleton />
-            <CardRowSkeleton />
-          </Card>
-        )}
-
-        {!loading && !error && myOrders.length === 0 && (
-          <Card>
-            <EmptyState icon={ClipboardList} title="No orders yet" description="Requests you place will show up here." />
-          </Card>
-        )}
-
-        {!loading && !error && myOrders.length > 0 && (
-          <Card className="divide-y divide-white/10">
-            {myOrders.map((order) => (
-              <Link
-                key={order.id}
-                href={`/orders/${order.id}`}
-                className="flex items-center justify-between gap-4 px-5 py-4 transition-colors first:rounded-t-2xl last:rounded-b-2xl hover:bg-white/[0.03]"
-              >
-                <div>
-                  <p className="text-sm text-white">Order #{order.id.slice(-6)}</p>
-                  <p className="text-xs text-neutral-400">Qty {order.quantity}</p>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Badge variant={STATUS_VARIANT[order.status] ?? "neutral"}>{order.status}</Badge>
-                  <ChevronRight className="h-4 w-4 text-neutral-600" strokeWidth={2} />
-                </div>
-              </Link>
-            ))}
-          </Card>
-        )}
+      <div className="mt-8 grid grid-cols-2 gap-3 lg:grid-cols-4">
+        <Stat label="Awaiting seller" value={orders.loading ? "—" : pending} />
+        <Stat label="Accepted orders" value={orders.loading ? "—" : accepted} />
+        <Stat label="Accepted value" value={orders.loading || products.loading ? "—" : formatPrice(spent)} />
+        <div className="grid grid-cols-2 gap-3">
+          <Link href="/wishlist" className="rounded-xl border border-line bg-surface p-4 transition-colors hover:border-brand/40">
+            <Heart className="h-4 w-4 text-brand" strokeWidth={2} aria-hidden />
+            <p className="mt-2 text-lg font-semibold tabular-nums text-fg">{wishCount}</p>
+            <p className="text-xs text-subtle">Wishlist</p>
+          </Link>
+          <Link href="/cart" className="rounded-xl border border-line bg-surface p-4 transition-colors hover:border-brand/40">
+            <ShoppingCart className="h-4 w-4 text-brand-text" strokeWidth={2} aria-hidden />
+            <p className="mt-2 text-lg font-semibold tabular-nums text-fg">{cartCount}</p>
+            <p className="text-xs text-subtle">In cart</p>
+          </Link>
+        </div>
       </div>
+
+      <section className="mt-10">
+        <SectionHeading title="Order history" count={orders.loading ? undefined : mine.length} />
+
+        {orders.error && <ErrorState error={orders.error} title="Couldn't load your orders" onRetry={() => orders.refetch()} />}
+
+        {orders.loading && (
+          <Card className="divide-y divide-line">
+            <CardRowSkeleton />
+            <CardRowSkeleton />
+            <CardRowSkeleton />
+          </Card>
+        )}
+
+        {!orders.loading && !orders.error && mine.length === 0 && (
+          <Card>
+            <EmptyState
+              icon={ClipboardList}
+              title="No orders yet"
+              description="Orders you place will show up here, with live status updates from the seller."
+              action={
+                <Link href="/products" className={buttonStyles({})}>
+                  Start shopping
+                </Link>
+              }
+            />
+          </Card>
+        )}
+
+        {!orders.loading && !orders.error && mine.length > 0 && (
+          <Card className="divide-y divide-line">
+            {mine.map((order) => {
+              const product = productById.get(order.productId);
+              return (
+                <div
+                  key={order.id}
+                  className="flex items-center gap-3 px-4 py-4 transition-colors first:rounded-t-xl last:rounded-b-xl hover:bg-surface-2/60 sm:px-5"
+                >
+                  <Link href={`/orders/${order.id}`} className="flex min-w-0 flex-1 items-center gap-4">
+                    <ProductImage
+                      src={product?.imageUrl}
+                      alt=""
+                      category={product?.category}
+                      className="h-14 w-14 shrink-0 rounded-md border border-line"
+                    />
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-medium text-fg">
+                        {product?.name ?? "Product no longer available"}
+                      </p>
+                      <p className="mt-0.5 text-xs text-subtle">
+                        Order #{shortId(order.id)} · Qty {order.quantity}
+                        {product && ` · ${formatPrice(product.price * order.quantity)}`}
+                      </p>
+                    </div>
+                    <Badge variant={STATUS_VARIANT[order.status] ?? "neutral"}>{order.status}</Badge>
+                    <ChevronRight className="hidden h-4 w-4 text-subtle sm:block" strokeWidth={2} aria-hidden />
+                  </Link>
+                  {product && (
+                    <div className="hidden sm:block">
+                      <BuyAgainButton product={product} quantity={order.quantity} />
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </Card>
+        )}
+      </section>
     </div>
+  );
+}
+
+function Stat({ label, value }: { label: string; value: React.ReactNode }) {
+  return (
+    <Card className="p-4">
+      <p className="text-xs text-subtle">{label}</p>
+      <p className="mt-1.5 text-2xl font-semibold tabular-nums text-fg">{value}</p>
+    </Card>
   );
 }

@@ -5,24 +5,45 @@ export type CartItem = {
   name: string;
   price: number;
   quantity: number;
+  imageUrl?: string | null;
+  category?: string | null;
 };
 
-type CartState = {
+export type CartState = {
   items: CartItem[];
+  /** False until persisted items have been read from localStorage on the client. */
+  hydrated: boolean;
 };
 
-const initialState: CartState = { items: [] };
+export const MAX_QTY = 99;
+
+const initialState: CartState = { items: [], hydrated: false };
+
+const clamp = (n: number) => Math.min(Math.max(Math.floor(n), 0), MAX_QTY);
 
 const cartSlice = createSlice({
   name: "cart",
   initialState,
   reducers: {
-    addItem(state, action: PayloadAction<{ productId: string; name: string; price: number }>) {
-      const existing = state.items.find((i) => i.productId === action.payload.productId);
+    hydrateCart(state, action: PayloadAction<CartItem[]>) {
+      state.items = action.payload;
+      state.hydrated = true;
+    },
+    addItem(
+      state,
+      action: PayloadAction<Omit<CartItem, "quantity"> & { quantity?: number }>
+    ) {
+      const { quantity = 1, ...item } = action.payload;
+      const existing = state.items.find((i) => i.productId === item.productId);
       if (existing) {
-        existing.quantity += 1;
+        existing.quantity = clamp(existing.quantity + quantity);
+        // Keep display fields fresh in case the seller edited the product.
+        existing.name = item.name;
+        existing.price = item.price;
+        existing.imageUrl = item.imageUrl;
+        existing.category = item.category;
       } else {
-        state.items.push({ ...action.payload, quantity: 1 });
+        state.items.push({ ...item, quantity: clamp(quantity) || 1 });
       }
     },
     removeItem(state, action: PayloadAction<{ productId: string }>) {
@@ -31,10 +52,22 @@ const cartSlice = createSlice({
     setQuantity(state, action: PayloadAction<{ productId: string; quantity: number }>) {
       const item = state.items.find((i) => i.productId === action.payload.productId);
       if (!item) return;
-      if (action.payload.quantity <= 0) {
+      const next = clamp(action.payload.quantity);
+      if (next <= 0) {
         state.items = state.items.filter((i) => i.productId !== action.payload.productId);
       } else {
-        item.quantity = action.payload.quantity;
+        item.quantity = next;
+      }
+    },
+    /** Adjust a line by a signed amount; the line disappears if it reaches zero (used by "Undo add"). */
+    changeQuantity(state, action: PayloadAction<{ productId: string; delta: number }>) {
+      const item = state.items.find((i) => i.productId === action.payload.productId);
+      if (!item) return;
+      const next = clamp(item.quantity + action.payload.delta);
+      if (next <= 0) {
+        state.items = state.items.filter((i) => i.productId !== action.payload.productId);
+      } else {
+        item.quantity = next;
       }
     },
     clearCart(state) {
@@ -43,5 +76,14 @@ const cartSlice = createSlice({
   },
 });
 
-export const { addItem, removeItem, setQuantity, clearCart } = cartSlice.actions;
+export const { hydrateCart, addItem, removeItem, setQuantity, changeQuantity, clearCart } =
+  cartSlice.actions;
 export default cartSlice.reducer;
+
+type WithCart = { cart: CartState };
+
+export const selectCartItems = (s: WithCart) => s.cart.items;
+export const selectCartCount = (s: WithCart) =>
+  s.cart.items.reduce((sum, i) => sum + i.quantity, 0);
+export const selectCartSubtotal = (s: WithCart) =>
+  s.cart.items.reduce((sum, i) => sum + i.price * i.quantity, 0);

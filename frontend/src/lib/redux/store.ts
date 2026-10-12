@@ -1,31 +1,47 @@
 import { configureStore } from "@reduxjs/toolkit";
 import cartReducer, { type CartItem } from "./cartSlice";
+import wishlistReducer from "./wishlistSlice";
+import uiReducer from "./uiSlice";
 
-const CART_KEY = "ecom_cart";
+export const CART_KEY = "ecom_cart";
+export const WISHLIST_KEY = "ecom_wishlist";
 
-function loadCart(): { items: CartItem[] } | undefined {
-  if (typeof window === "undefined") return undefined;
+export function readStorage<T>(key: string, fallback: T): T {
+  if (typeof window === "undefined") return fallback;
   try {
-    const raw = window.localStorage.getItem(CART_KEY);
-    return raw ? { items: JSON.parse(raw) } : undefined;
+    const raw = window.localStorage.getItem(key);
+    return raw ? (JSON.parse(raw) as T) : fallback;
   } catch {
-    return undefined;
+    return fallback;
   }
 }
 
-export function makeStore() {
-  const store = configureStore({
-    reducer: { cart: cartReducer },
-    preloadedState: { cart: loadCart() ?? { items: [] } },
-  });
-
-  if (typeof window !== "undefined") {
-    store.subscribe(() => {
-      window.localStorage.setItem(CART_KEY, JSON.stringify(store.getState().cart.items));
-    });
+export function writeStorage(key: string, value: unknown) {
+  try {
+    window.localStorage.setItem(key, JSON.stringify(value));
+  } catch {
+    // Storage can be full or blocked (private mode) — the cart still works in memory.
   }
+}
 
-  return store;
+/** Guards against stale/corrupt persisted data from older app versions. */
+export function sanitizeCart(raw: unknown): CartItem[] {
+  if (!Array.isArray(raw)) return [];
+  return raw.filter(
+    (i): i is CartItem =>
+      !!i &&
+      typeof i.productId === "string" &&
+      typeof i.name === "string" &&
+      typeof i.price === "number" &&
+      Number.isFinite(i.quantity) &&
+      i.quantity > 0
+  );
+}
+
+export function makeStore() {
+  return configureStore({
+    reducer: { cart: cartReducer, wishlist: wishlistReducer, ui: uiReducer },
+  });
 }
 
 export type AppStore = ReturnType<typeof makeStore>;
