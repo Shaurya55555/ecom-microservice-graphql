@@ -82,5 +82,20 @@ services:
       - mongodb
       - kafka
 
+  notification-service:
+    build:
+      context: ./notification-service
+      dockerfile: Dockerfile
+    container_name: notification-service
+    ports:
+      - "3004:3004"
+    environment:
+      MONGO_URI: mongodb://mongodb:27017/notification-service
+      PORT: 3004
+      KAFKA_BROKER: kafka:29092
+    depends_on:
+      - mongodb
+      - kafka
+
 volumes:
   mongodb_data:

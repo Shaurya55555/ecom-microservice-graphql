@@ -1,0 +1,21 @@
+name: notification-service
+
+on:
+  push:
+    paths: ['notification-service/**']
+  pull_request:
+    paths: ['notification-service/**']
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: notification-service
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.22'
+      - run: go vet ./...
+      - run: go test ./...
