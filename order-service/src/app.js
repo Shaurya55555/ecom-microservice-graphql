@@ -1,6 +1,7 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const orderRoutes = require('./routes/orderRoutes');
+const { startOrderEventConsumer } = require('./events/orderConsumer');
 require('dotenv').config();
 
 const app = express();
@@ -17,6 +18,12 @@ if (!mongoURI) {
 mongoose.connect(mongoURI, { useNewUrlParser: true, useUnifiedTopology: true })
   .then(() => console.log('Connected to MongoDB'))
   .catch(err => console.error('Error connecting to MongoDB:', err));
+
+if (process.env.KAFKA_BROKER) {
+  startOrderEventConsumer();
+} else {
+  console.warn('KAFKA_BROKER not set -- order-events consumer not started; order status changes will not be applied.');
+}
 
 // Order routes
 app.use('/orders', orderRoutes);

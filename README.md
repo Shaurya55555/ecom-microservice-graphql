@@ -11,6 +11,7 @@ The **Ecom Microservice GraphQL** project is a comprehensive e-commerce solution
 - **Order Management**: Manage customer orders efficiently.
 - **GraphQL API Gateway**: Unified entry point for all services using GraphQL for data fetching.
 - **Kafka Integration**: Asynchronous communication between microservices using Kafka for event-driven architecture.
+- **Notification Service (Go)**: Consumes order events from Kafka and stores per-user notifications, with retries, a dead-letter topic and idempotent writes.
 - **Docker Support**: Containerized services for easy deployment and scalability.
 
   
@@ -21,6 +22,7 @@ The **Ecom Microservice GraphQL** project is a comprehensive e-commerce solution
 - MongoDB: NoSQL database for data storage.
 - Kafka: Distributed event streaming platform for asynchronous communication.
 - GraphQL: Query language for APIs and runtime for executing those queries.
+- Go: Notification service (segmentio/kafka-go, MongoDB driver).
 - Docker: Containerization platform to run the application in isolated environments.
 
 ## Setup Instructions
@@ -110,11 +112,41 @@ Order Service:
 http://localhost:3003/orders
 ```
 
+Notification Service:
+
+```bash
+http://localhost:3004/notifications?userId=<id>
+http://localhost:3004/health
+```
+
 GraphQL Gateway:
 
 ```bash
 http://localhost:4000/graphql
 ```
+
+Run everything with `JWT_SECRET=<anything> docker-compose up --build`. To host it, see [DEPLOY.md](DEPLOY.md).
+
+## Notification Service (Go)
+
+`notification-service/` is a Go service that closes the loop on order events.
+
+```
+order-service --order-events--> notification-service --> MongoDB (notifications)
+                                     |                       ^
+                                     +--> order-events-dlq   |
+graphql-gateway: getNotifications(userId) ---HTTP-----------+
+```
+
+- Consumes `order-events` in consumer group `notification-service`. `order_created` stores "New order for product X"; `order_status_changed` stores "Your order was Accepted/Rejected".
+- **No silent loss**: the offset is committed only after the Mongo write succeeds or the message has been published to `order-events-dlq`.
+- **Retries**: a failed write is retried up to 5 times with exponential backoff. Malformed or unknown messages are poison messages and go straight to the dead-letter topic.
+- **Idempotent**: a unique index on `(orderId, type, status)` means a redelivered event never creates a duplicate.
+- **Graceful shutdown**: on SIGTERM it finishes and commits the in-flight message, then exits. If the broker is unavailable it keeps retrying instead of exiting.
+- One JSON log line per event; `GET /health` pings Mongo.
+- GraphQL: `{ getNotifications(userId: "<id>") { type status message createdAt } }`
+
+Tests: `cd notification-service && go test ./...` (handler table tests, retry/DLQ behaviour, Kafka security config). CI runs them on every push to the folder.
 
 
 
@@ -200,6 +232,11 @@ ecom-microservice-graphql/
 │   ├── Dockerfile                     # Dockerfile for GraphQL API Gateway
 │   ├── package.json                   # Package dependencies
 │   └── .env.example                   # Example environment variables
+│
+├── notification-service/      # Go service: order-events consumer, retries, DLQ, idempotent writes
+│   ├── main.go, handler.go, store.go, http.go, kafkaconf.go
+│   ├── *_test.go                      # Table-driven tests
+│   └── Dockerfile
 │
 ├── kafka/                     # Kafka setup and configurations
 │   ├── topics/

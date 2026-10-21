@@ -43,6 +43,12 @@ const resolvers = {
       const response = await axios.get(`${process.env.ORDER_SERVICE_URL}/orders/seller`, authHeaders(context));
       return response.data;
     },
+    getNotifications: async (_, { userId }) => {
+      const response = await axios.get(`${process.env.NOTIFICATION_SERVICE_URL}/notifications`, {
+        params: { userId },
+      });
+      return response.data;
+    },
     getAccounts: async (_, __, context) => {
       const response = await axios.get(`${process.env.USER_SERVICE_URL}/users`, authHeaders(context));
       return response.data;

@@ -1,0 +1,63 @@
+# Render Blueprint: one web service per app, built from each folder's Dockerfile.
+# Mongo is MongoDB Atlas and Kafka is Confluent Cloud (see DEPLOY.md), so every
+# connection string is a secret entered in the Render dashboard (sync: false).
+services:
+  - type: web
+    name: user-service
+    runtime: docker
+    dockerfilePath: ./user-service/Dockerfile
+    dockerContext: ./user-service
+    envVars:
+      - { key: MONGO_URI, sync: false }
+      - { key: JWT_SECRET, generateValue: true }
+      - { key: KAFKA_BROKER, sync: false }
+      - { key: KAFKA_SASL_USERNAME, sync: false }
+      - { key: KAFKA_SASL_PASSWORD, sync: false }
+
+  - type: web
+    name: product-service
+    runtime: docker
+    dockerfilePath: ./product-service/Dockerfile
+    dockerContext: ./product-service
+    envVars:
+      - { key: MONGO_URI, sync: false }
+      - { key: JWT_SECRET, sync: false }   # must equal user-service's value
+      - { key: KAFKA_BROKER, sync: false }
+      - { key: KAFKA_SASL_USERNAME, sync: false }
+      - { key: KAFKA_SASL_PASSWORD, sync: false }
+
+  - type: web
+    name: order-service
+    runtime: docker
+    dockerfilePath: ./order-service/Dockerfile
+    dockerContext: ./order-service
+    envVars:
+      - { key: MONGO_URI, sync: false }
+      - { key: JWT_SECRET, sync: false }   # must equal user-service's value
+      - { key: PRODUCT_SERVICE_URL, sync: false }   # https://<product-service>.onrender.com
+      - { key: KAFKA_BROKER, sync: false }
+      - { key: KAFKA_SASL_USERNAME, sync: false }
+      - { key: KAFKA_SASL_PASSWORD, sync: false }
+
+  - type: web
+    name: notification-service
+    runtime: docker
+    dockerfilePath: ./notification-service/Dockerfile
+    dockerContext: ./notification-service
+    healthCheckPath: /health
+    envVars:
+      - { key: MONGO_URI, sync: false }
+      - { key: KAFKA_BROKER, sync: false }
+      - { key: KAFKA_SASL_USERNAME, sync: false }
+      - { key: KAFKA_SASL_PASSWORD, sync: false }
+
+  - type: web
+    name: graphql-gateway
+    runtime: docker
+    dockerfilePath: ./graphql-gateway/Dockerfile
+    dockerContext: ./graphql-gateway
+    envVars:
+      - { key: USER_SERVICE_URL, sync: false }
+      - { key: PRODUCT_SERVICE_URL, sync: false }
+      - { key: ORDER_SERVICE_URL, sync: false }
+      - { key: NOTIFICATION_SERVICE_URL, sync: false }

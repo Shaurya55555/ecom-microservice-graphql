@@ -1,6 +1,6 @@
 const axios = require('axios');
 const Order = require('../models/orderModel');
-const { produceOrderEvent } = require('../events/orderProducer');
+const { produceOrderEvent, produceOrderStatusEvent } = require('../events/orderProducer');
 
 // Create a new order
 exports.createOrder = async (req, res) => {
@@ -42,7 +42,11 @@ exports.getOrderById = async (req, res) => {
   }
 };
 
-// Seller accepts or rejects an order placed against one of their products
+// Seller accepts or rejects an order placed against one of their products.
+// Auth/ownership are checked synchronously so an unauthorized request is
+// rejected immediately; the actual status write is applied asynchronously
+// by the order-events Kafka consumer (see events/orderConsumer.js), so this
+// transition is genuinely event-driven rather than a direct DB write.
 exports.respondToOrder = async (req, res) => {
   try {
     const { accept } = req.body;
@@ -58,9 +62,13 @@ exports.respondToOrder = async (req, res) => {
       }
     }
 
-    order.status = accept ? 'Accepted' : 'Rejected';
-    await order.save();
-    res.status(200).json(order);
+    const status = accept ? 'Accepted' : 'Rejected';
+    await produceOrderStatusEvent(order._id, status, order.userId);
+
+    // Optimistic response: reflects the requested status while the
+    // consumer applies the write, so callers (and the schema, which
+    // requires Order.status) don't have to know this is async.
+    res.status(202).json({ ...order.toObject(), status });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
