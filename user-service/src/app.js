@@ -11,7 +11,7 @@ const app = express();
 app.use(express.json());
 
 // MongoDB connection string (use environment variable or default to local MongoDB)
-const mongoURI = process.env.MONGODB_URI || 'mongodb://localhost:27017/userdb';
+const mongoURI = process.env.MONGO_URI || process.env.MONGODB_URI || 'mongodb://localhost:27017/userdb';
 
 // Seed the single admin account from env vars if it doesn't exist yet.
 // ADMIN_EMAIL / ADMIN_PASSWORD must be set in the deployment environment --

@@ -10,7 +10,7 @@ services:
       - mongodb_data:/data/db
 
   zookeeper:
-    image: confluentinc/cp-zookeeper:latest
+    image: confluentinc/cp-zookeeper:7.6.1
     container_name: zookeeper
     ports:
       - "2181:2181"
@@ -19,7 +19,7 @@ services:
       ZOOKEEPER_TICK_TIME: 2000
 
   kafka:
-    image: confluentinc/cp-kafka:latest
+    image: confluentinc/cp-kafka:7.6.1
     container_name: kafka
     ports:
       - "9092:9092"
@@ -78,6 +78,7 @@ services:
       PORT: 3003
       JWT_SECRET: ${JWT_SECRET}
       KAFKA_BROKER: kafka:29092
+      PRODUCT_SERVICE_URL: http://product-service:3002
     depends_on:
       - mongodb
       - kafka
@@ -87,6 +88,7 @@ services:
       context: ./notification-service
       dockerfile: Dockerfile
     container_name: notification-service
+    restart: unless-stopped
     ports:
       - "3004:3004"
     environment:
@@ -96,6 +98,25 @@ services:
     depends_on:
       - mongodb
       - kafka
+
+  graphql-gateway:
+    build:
+      context: ./graphql-gateway
+      dockerfile: Dockerfile
+    container_name: graphql-gateway
+    ports:
+      - "4000:4000"
+    environment:
+      PORT: 4000
+      USER_SERVICE_URL: http://user-service:3001
+      PRODUCT_SERVICE_URL: http://product-service:3002
+      ORDER_SERVICE_URL: http://order-service:3003
+      NOTIFICATION_SERVICE_URL: http://notification-service:3004
+    depends_on:
+      - user-service
+      - product-service
+      - order-service
+      - notification-service
 
 volumes:
   mongodb_data:

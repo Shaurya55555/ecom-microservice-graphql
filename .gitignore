@@ -12,3 +12,5 @@
 # OS files
 .DS_Store
 desktop.ini
+
+.vercel

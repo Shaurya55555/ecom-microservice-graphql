@@ -26,6 +26,15 @@ const typeDefs = gql`
     status: String!
   }
 
+  type Notification {
+    orderId: ID!
+    userId: ID
+    type: String!
+    status: String!
+    message: String!
+    createdAt: String!
+  }
+
   type Account {
     id: ID!
     username: String!
@@ -56,6 +65,7 @@ const typeDefs = gql`
     getOrder(id: ID!): Order
     getSellerOrders: [Order]
     getAccounts: [Account]
+    getNotifications(userId: ID!): [Notification]
   }
 
   type Mutation {

@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"io"
 	"log"
 	"net/http"
 	"os"
@@ -92,7 +93,13 @@ func runConsumer(ctx context.Context, r *kafka.Reader, dlq *kafka.Writer, h *Han
 	for {
 		msg, err := r.FetchMessage(ctx)
 		if err != nil {
-			return // context cancelled or reader closed
+			if ctx.Err() != nil || errors.Is(err, io.EOF) {
+				return // shutdown requested or reader closed
+			}
+			// Broker unavailable or rebalancing: keep the service alive and retry.
+			logEvent(map[string]any{"msg": "fetch failed, retrying", "error": err.Error()})
+			time.Sleep(time.Second)
+			continue
 		}
 		process(h, dlq, msg)
 		if err := r.CommitMessages(context.Background(), msg); err != nil {
