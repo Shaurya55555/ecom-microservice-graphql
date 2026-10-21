@@ -1,6 +1,7 @@
 const kafka = require('kafka-node');
+const { kafkaOptions } = require('./kafkaOptions');
 
-const kafkaClient = new kafka.KafkaClient({ kafkaHost: process.env.KAFKA_BROKER });
+const kafkaClient = new kafka.KafkaClient(kafkaOptions());
 const producer = new kafka.Producer(kafkaClient);
 
 function send(topic, event) {

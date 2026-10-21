@@ -1,5 +1,6 @@
 const kafka = require('kafka-node');
-const client = new kafka.KafkaClient({ kafkaHost: process.env.KAFKA_BROKER });
+const { kafkaOptions } = require('./kafkaOptions');
+const client = new kafka.KafkaClient(kafkaOptions());
 const producer = new kafka.Producer(client);
 
 // Emit 'User Registered' event

@@ -54,11 +54,14 @@ func main() {
 		}
 	}()
 
-	reader := kafka.NewReader(kafka.ReaderConfig{
-		Brokers: []string{broker}, GroupID: groupID, Topic: topic,
-		MinBytes: 1, MaxBytes: 1 << 20, StartOffset: kafka.FirstOffset,
-	})
-	dlq := &kafka.Writer{Addr: kafka.TCP(broker), Topic: dlqTopic, AllowAutoTopicCreation: true}
+	reader, err := newReader(broker)
+	if err != nil {
+		log.Fatalf("kafka reader: %v", err)
+	}
+	dlq, err := newDLQWriter(broker)
+	if err != nil {
+		log.Fatalf("kafka dlq writer: %v", err)
+	}
 
 	runConsumer(ctx, reader, dlq, h)
 

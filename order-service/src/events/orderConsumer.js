@@ -1,5 +1,6 @@
 const kafka = require('kafka-node');
 const Order = require('../models/orderModel');
+const { kafkaOptions } = require('./kafkaOptions');
 
 // Consumes order-events and applies the side effects that are safe to do
 // asynchronously. Auth/ownership checks stay synchronous in the controller
@@ -10,12 +11,11 @@ function startOrderEventConsumer() {
   // reads partition 0, and order-events has 3 partitions, so status events
   // landing on partitions 1 and 2 would be silently ignored.
   const consumer = new kafka.ConsumerGroup(
-    {
-      kafkaHost: process.env.KAFKA_BROKER,
+    kafkaOptions({
       groupId: 'order-service',
       fromOffset: 'earliest',
       autoCommit: true,
-    },
+    }),
     ['order-events']
   );
 

@@ -1,5 +1,6 @@
 const kafka = require('kafka-node');
-const client = new kafka.KafkaClient({ kafkaHost: process.env.KAFKA_BROKER });
+const { kafkaOptions } = require('./kafkaOptions');
+const client = new kafka.KafkaClient(kafkaOptions());
 const consumer = new kafka.Consumer(client, [{ topic: 'user-events' }], { autoCommit: true });
 
 // Listen for user-related events
