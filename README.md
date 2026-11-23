@@ -155,7 +155,7 @@ Tests: `cd notification-service && go test ./...` (handler table tests, retry/DL
 
 | suite | tests | how to run | CI |
 |---|---|---|---|
-| Go notification service (handler table tests, retry and DLQ, Kafka security config) | 18 | `cd notification-service && go test ./...` | `notification-service.yml` |
+| Go notification service (handler table tests, retry and DLQ, Kafka security config) | 18 (3 functions, 15 table subtests) | `cd notification-service && go test ./...` | `notification-service.yml` |
 | Next.js frontend (cart, search, catalog, validation, Apollo compat, components) | 85 | `cd frontend && npm test` | `ci.yml` |
 | Node services (user, product, order) and GraphQL gateway | 13 | `npx jest` in each folder, needs MongoDB | **not in CI** |
 
