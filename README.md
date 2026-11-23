@@ -153,8 +153,33 @@ Tests: `cd notification-service && go test ./...` (handler table tests, retry/DL
 
 ## Testing
 
-Use Postman or a similar tool to test the endpoints for user registration, product management, and order management.
+| suite | tests | how to run | CI |
+|---|---|---|---|
+| Go notification service (handler table tests, retry and DLQ, Kafka security config) | 18 | `cd notification-service && go test ./...` | `notification-service.yml` |
+| Next.js frontend (cart, search, catalog, validation, Apollo compat, components) | 85 | `cd frontend && npm test` | `ci.yml` |
+| Node services (user, product, order) and GraphQL gateway | 13 | `npx jest` in each folder, needs MongoDB | **not in CI** |
 
+The Node service and gateway tests were written before JWT auth was added. As of 2026-11-23, 6 of the 9 service
+tests and both gateway tests fail (401 responses and missing upstream services), so they are listed here but not
+counted as passing. Use Postman or similar for manual endpoint checks until they are rewritten.
+
+## Failure handling
+
+Verified by tests (Go notification service):
+
+| situation | behavior |
+|---|---|
+| Mongo write fails | retried up to 5 times with exponential backoff (200 ms start), then the event goes to `order-events-dlq` with the error in a header |
+| malformed or unknown event | treated as poison: sent straight to the dead-letter topic, no retries |
+| dead-letter publish fails | retried every second until it lands; the offset is not committed before that, so nothing is lost |
+| event redelivered by Kafka | unique index on `(orderId, type, status)` prevents a duplicate notification |
+| broker unavailable or rebalancing | the consumer logs and keeps retrying; the process does not exit |
+| SIGTERM during processing | the in-flight message finishes and commits, then the service exits (10 s shutdown window) |
+| Mongo down at startup | connection retried with a 5 s timeout per attempt |
+| `GET /health` | pings Mongo with a 2 s timeout |
+
+Not covered by passing tests: the behavior of the GraphQL gateway and the Node services when a downstream service or
+MongoDB is unavailable. Treat that as unverified.
 
 ## Project Structure
 
